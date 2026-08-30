@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool
 from std_msgs.msg import String
+from robot_task_interfaces.srv import GetRobotStatus
 
 
 class RobotSimulator(Node):
@@ -36,6 +37,12 @@ class RobotSimulator(Node):
             Bool,
             '/action_done',
             10
+        )
+
+        self.status_service = self.create_service(
+            GetRobotStatus,
+            '/get_robot_status',
+            self.get_robot_status_callback
         )
 
         self.get_logger().info(
@@ -154,6 +161,31 @@ class RobotSimulator(Node):
         self.get_logger().info(
             f'Published action result: {success}'
         )
+
+    def current_elapsed_seconds(self):
+        if self.action_started_at is None:
+            return 0.0
+
+        now = self.get_clock().now()
+
+        return (
+            now - self.action_started_at
+        ).nanoseconds / 1_000_000_000
+
+    def get_robot_status_callback(self, request, response):
+        response.status = self.status
+        response.current_action = (
+            self.current_action
+            if self.current_action is not None
+            else 'NONE'
+        )
+        response.elapsed_time = self.current_elapsed_seconds()
+
+        self.get_logger().info(
+            'Robot status requested by a client.'
+        )
+
+        return response
 
 
 def main(args=None):

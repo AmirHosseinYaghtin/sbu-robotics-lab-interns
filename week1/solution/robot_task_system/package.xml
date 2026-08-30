@@ -3,13 +3,16 @@
 <package format="3">
   <name>robot_task_system</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>A simple ROS 2 robot task execution system with a Task Controller, Robot Simulator, and Task Monitor.</description>
   <maintainer email="mohammad05@todo.todo">mohammad05</maintainer>
   <license>Apache-2.0</license>
 
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
-  <depend>example_interfaces</depend>
+  <depend>robot_task_interfaces</depend>
+
+  <exec_depend>ros2launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
