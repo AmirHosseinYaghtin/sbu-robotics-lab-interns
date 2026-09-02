@@ -1,0 +1,6 @@
+# Request: empty (no fields needed to ask for the status)
+---
+# Response: the robot's current status
+string status
+string current_action
+float64 elapsed_time
