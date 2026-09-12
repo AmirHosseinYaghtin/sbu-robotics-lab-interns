@@ -9,6 +9,8 @@
 
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>robot_task_interfaces</depend>
 
   <exec_depend>ros2launch</exec_depend>

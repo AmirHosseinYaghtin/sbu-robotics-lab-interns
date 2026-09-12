@@ -31,7 +31,7 @@ setup(
     entry_points={
         'console_scripts': [
             'task_controller = robot_task_system.task_controller:main',
-            'robot_simulator = robot_task_system.robot_simulator:main',
+            'robot_controller = robot_task_system.robot_controller:main',
             'task_monitor = robot_task_system.task_monitor:main',
         ],
     },

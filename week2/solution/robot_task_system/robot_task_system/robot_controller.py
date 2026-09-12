@@ -1,18 +1,20 @@
 import rclpy
+import math
 from rclpy.node import Node
 from std_msgs.msg import Bool
 from std_msgs.msg import String
 from robot_task_interfaces.srv import GetRobotStatus
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
 
-
-class RobotSimulator(Node):
+class RobotController(Node):
 
     IDLE = 'IDLE'
     EXECUTING = 'EXECUTING'
     ERROR = 'ERROR'
 
     def __init__(self):
-        super().__init__('robot_simulator')
+        super().__init__('robot_controller')
 
         self.status = self.IDLE
         self.current_action = None
@@ -46,9 +48,128 @@ class RobotSimulator(Node):
         )
 
         self.get_logger().info(
-            'Robot Simulator node has started.'
+            'Robot Controller node has started.'
+        )
+        
+        self.cmd_vel_publisher = self.create_publisher(
+            Twist,
+            '/cmd_vel',
+            10
         )
 
+        self.odom_subscription = self.create_subscription(
+            Odometry,
+            '/odom',
+            self.odom_callback,
+            10
+        )   
+        
+        self.current_x = None
+        self.current_y = None
+        self.current_yaw = None   
+        
+        self.target_x = None
+        self.target_y = None
+        self.moving = False
+
+        self.control_timer = self.create_timer(
+            0.1,
+            self.control_loop
+        )  
+        
+        self.trajectory = []
+        self.waypoint_index = 0
+
+    def start_trajectory(self, action, trajectory):
+        if not trajectory:
+            return
+
+        self.status = self.EXECUTING
+        self.current_action = action
+        self.action_started_at = self.get_clock().now()
+
+        self.trajectory = trajectory
+        self.waypoint_index = 0
+
+        self.target_x = trajectory[0][0]
+        self.target_y = trajectory[0][1]
+
+        self.moving = True
+
+    def normalize_angle(self, angle):
+        while angle > math.pi:
+            angle -= 2.0 * math.pi
+
+        while angle < -math.pi:
+            angle += 2.0 * math.pi
+
+        return angle
+    
+    def control_loop(self):
+        if not self.moving:
+            return
+
+        if self.current_x is None or self.current_yaw is None:
+            return
+
+        dx = self.target_x - self.current_x
+        dy = self.target_y - self.current_y
+
+        distance = math.sqrt(dx * dx + dy * dy)
+
+        target_yaw = math.atan2(dy, dx)
+        angle_error = self.normalize_angle(
+            target_yaw - self.current_yaw
+        )
+
+        command = Twist()
+
+        if distance < 0.1:
+            self.waypoint_index += 1
+
+            if self.waypoint_index < len(self.trajectory):
+                self.target_x = self.trajectory[self.waypoint_index][0]
+                self.target_y = self.trajectory[self.waypoint_index][1]
+                return
+
+            self.moving = False
+            self.cmd_vel_publisher.publish(command)
+            self.complete_current_action()
+            return
+
+        if abs(angle_error) > 0.15:
+            command.angular.z = 0.5 * angle_error
+        else:
+            command.linear.x = 0.15
+            command.angular.z = 0.3 * angle_error
+
+        self.cmd_vel_publisher.publish(command)
+    
+    def start_move(self, action, target_x, target_y):
+        self.status = self.EXECUTING
+        self.current_action = action
+        self.action_started_at = self.get_clock().now()
+
+        self.target_x = target_x
+        self.target_y = target_y
+        self.moving = True
+
+        self.get_logger().info(
+            f'Starting move: {action} '
+            f'to ({target_x:.2f}, {target_y:.2f})'
+        )
+    
+    def odom_callback(self, message):
+        self.current_x = message.pose.pose.position.x
+        self.current_y = message.pose.pose.position.y
+
+        q = message.pose.pose.orientation
+
+        self.current_yaw = math.atan2(
+            2.0 * (q.w * q.z + q.x * q.y),
+            1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+        )
+        
     def action_callback(self, message):
         action = message.data.strip()
 
@@ -191,7 +312,7 @@ class RobotSimulator(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    node = RobotSimulator()
+    node = RobotController()
 
     rclpy.spin(node)
 
