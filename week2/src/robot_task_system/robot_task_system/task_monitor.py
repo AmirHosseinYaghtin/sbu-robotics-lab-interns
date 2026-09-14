@@ -6,7 +6,6 @@ from robot_task_interfaces.srv import GetRobotStatus
 
 
 class TaskMonitor(Node):
-
     def __init__(self):
         super().__init__('task_monitor')
 

@@ -3,7 +3,7 @@
 <package format="3">
   <name>robot_task_system</name>
   <version>0.0.0</version>
-  <description>A simple ROS 2 robot task execution system with a Task Controller, Robot Simulator, and Task Monitor.</description>
+  <description>A simple ROS 2 robot task execution system with a Task Controller, Robot Simulator, and Task Monitor. Week2 adds a PDDLStream planner-driven pipeline.</description>
   <maintainer email="mohammad05@todo.todo">mohammad05</maintainer>
   <license>Apache-2.0</license>
 
@@ -11,10 +11,14 @@
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
+  <depend>std_srvs</depend>
   <depend>robot_task_interfaces</depend>
 
   <exec_depend>ros2launch</exec_depend>
+  <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>turtlebot3_gazebo</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

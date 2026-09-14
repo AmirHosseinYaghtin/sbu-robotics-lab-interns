@@ -15,13 +15,17 @@ setup(
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'),
             glob('launch/*.launch.py')),
+        (os.path.join('share', package_name, 'config'),
+            glob('config/*.json')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='mohammad05',
     maintainer_email='mohammad05@todo.todo',
     description='A simple ROS 2 robot task execution system with a '
-                'Task Controller, Robot Simulator, and Task Monitor.',
+                'Task Controller, Robot Controller, and Task Monitor. '
+                'Week2 makes the pipeline PDDLStream planner-driven and '
+                'moves the real TurtleBot3 in Gazebo.',
     license='Apache-2.0',
     extras_require={
         'test': [

@@ -9,8 +9,9 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-# Generate code for the custom service definitions
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Waypoint.msg"
+  "msg/MoveCommand.msg"
   "srv/GetRobotStatus.srv"
 )
 
