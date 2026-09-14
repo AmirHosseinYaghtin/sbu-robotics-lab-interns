@@ -245,6 +245,37 @@ class TaskController(Node):
             'Waiting for action result...'
         )
 
+    def action_done_callback(self, message):
+        if not self.waiting_for_result:
+            self.get_logger().warning(
+                'Unexpected action result received.'
+            )
+            return
+
+        if message.data:
+            completed_action = self.action_queue.popleft()
+
+            self.get_logger().info(
+                f'Action succeeded: {self._action_label(completed_action)}'
+            )
+
+            self.current_action = None
+            self.waiting_for_result = False
+
+            self.get_logger().info(
+                f'{len(self.action_queue)} actions remaining.'
+            )
+
+        else:
+            failed_action = self.current_action
+
+            self.queue_stopped = True
+            self.waiting_for_result = False
+
+            self.get_logger().error(
+                f'Action failed: {self._action_label(failed_action)}. '
+                f'Task queue stopped.'
+            )
 
 
 def main(args=None):
