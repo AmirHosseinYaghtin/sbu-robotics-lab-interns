@@ -508,7 +508,7 @@ Action succeeded: PLACE_cube1
 All actions completed successfully.
 ```
 
-A couple of screenshots from the TurtleBot3 simulation is included below:
+A couple of screenshots from the TurtleBot3 simulation are included below:
 
 ![TurtleBot3 simulation 1](screenshots/img1.jpg)
 ![Turtlebot3 simulation 2](screenshots/img2.jpg)
