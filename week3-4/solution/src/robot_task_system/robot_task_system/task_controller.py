@@ -244,6 +244,35 @@ class TaskController(Node):
         self.get_logger().info(
             'Waiting for action result...'
         )
+    def action_done_callback(self, message):
+        if not self.waiting_for_result or self.current_action is None:
+            self.get_logger().warning(
+                'Received an action result while no action is pending. Ignoring.'
+            )
+            return
+
+        action_label = self._action_label(self.current_action)
+
+        if message.data:
+            if self.action_queue:
+                self.action_queue.popleft()
+
+            self.get_logger().info(
+                f'Action completed successfully: {action_label}'
+            )
+
+            self.current_action = None
+            self.waiting_for_result = False
+            self.waiting_message_logged = False
+            return
+
+        self.get_logger().error(
+            f'Action failed: {action_label}. Stopping task execution.'
+        )
+
+        self.queue_stopped = True
+        self.current_action = None
+        self.waiting_for_result = False
 
 
 
