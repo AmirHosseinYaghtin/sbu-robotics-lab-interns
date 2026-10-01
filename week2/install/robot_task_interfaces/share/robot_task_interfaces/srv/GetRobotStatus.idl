@@ -1,0 +1,23 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from robot_task_interfaces/srv/GetRobotStatus.srv
+// generated code does not contain a copyright notice
+
+
+module robot_task_interfaces {
+  module srv {
+    @verbatim (language="comment", text=
+      "Request: empty (no fields needed to ask for the status)")
+    struct GetRobotStatus_Request {
+      uint8 structure_needs_at_least_one_member;
+    };
+    @verbatim (language="comment", text=
+      "Response: the robots current status")
+    struct GetRobotStatus_Response {
+      string status;
+
+      string current_action;
+
+      double elapsed_time;
+    };
+  };
+};

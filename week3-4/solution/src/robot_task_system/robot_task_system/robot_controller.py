@@ -18,7 +18,9 @@ class RobotController(Node):
     ERROR = 'ERROR'
 
     WAYPOINT_TOL = 0.1
-    GOAL_THETA_TOL = 0.1
+    FINAL_TOL = 0.02
+    GOAL_THETA_TOL = 0.03
+    MIN_FINAL_SPEED = 0.03
     MAX_MOVE_TIME = 180.0
     ODOM_TIMEOUT = 5.0
     INITIAL_ODOM_TIMEOUT = 120.0
@@ -101,6 +103,7 @@ class RobotController(Node):
 
         self.final_theta = None
         self.rotating_final = False
+        self.reverse = False
         self.last_odom_time = None
         self.move_deadline = None
         self.odom_deadline = None
@@ -146,11 +149,13 @@ class RobotController(Node):
             self.publish_action_result(False)
             return
 
-        self.start_trajectory(label, trajectory)
+        self.start_trajectory(label, trajectory, message.reverse)
 
-    def start_trajectory(self, action, trajectory):
+    def start_trajectory(self, action, trajectory, reverse=False):
         if not trajectory:
             return
+
+        self.reverse = bool(reverse)
 
         self.status = self.EXECUTING
         self.current_action = action
@@ -189,6 +194,7 @@ class RobotController(Node):
     def fail_move(self, reason):
         self.moving = False
         self.rotating_final = False
+        self.reverse = False
         self.cmd_vel_publisher.publish(Twist())
 
         failed_action = self.current_action
@@ -240,6 +246,7 @@ class RobotController(Node):
             if abs(yaw_error) < self.GOAL_THETA_TOL:
                 self.moving = False
                 self.rotating_final = False
+                self.reverse = False
                 self.cmd_vel_publisher.publish(command)
                 self.complete_current_action()
                 return
@@ -260,8 +267,17 @@ class RobotController(Node):
         distance = math.sqrt(dx * dx + dy * dy)
 
         target_yaw = math.atan2(dy, dx)
+        heading = self.current_yaw + (math.pi if self.reverse else 0.0)
         angle_error = self.normalize_angle(
-            target_yaw - self.current_yaw
+            target_yaw - heading
+        )
+
+        is_last = self.waypoint_index == len(self.trajectory) - 1
+        tolerance = self.FINAL_TOL if is_last else self.WAYPOINT_TOL
+        overshoot = (
+            is_last
+            and distance < 2.0 * tolerance
+            and abs(angle_error) > math.pi / 2.0
         )
 
         if self.progress_ref_x is None:
@@ -286,7 +302,7 @@ class RobotController(Node):
                 self.fail_move('robot is stuck (no progress)')
                 return
 
-        if distance < self.WAYPOINT_TOL:
+        if distance < tolerance or overshoot:
             self.waypoint_index += 1
 
             if self.waypoint_index < len(self.trajectory):
@@ -305,7 +321,12 @@ class RobotController(Node):
         if abs(angle_error) > 0.15:
             command.angular.z = 0.5 * angle_error
         else:
-            command.linear.x = 0.15
+            speed = 0.15
+
+            if is_last:
+                speed = max(self.MIN_FINAL_SPEED, min(speed, 0.8 * distance))
+
+            command.linear.x = -speed if self.reverse else speed
             command.angular.z = 0.3 * angle_error
 
         self.cmd_vel_publisher.publish(command)
@@ -442,6 +463,7 @@ class RobotController(Node):
     def reset_callback(self, request, response):
         self.moving = False
         self.rotating_final = False
+        self.reverse = False
         self.cmd_vel_publisher.publish(Twist())
 
         if self.operation_timer is not None:

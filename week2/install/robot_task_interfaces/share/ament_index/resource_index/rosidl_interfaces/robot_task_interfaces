@@ -1,0 +1,8 @@
+msg/MoveCommand.idl
+msg/MoveCommand.msg
+msg/Waypoint.idl
+msg/Waypoint.msg
+srv/GetRobotStatus.idl
+srv/GetRobotStatus.srv
+srv/GetRobotStatus_Request.msg
+srv/GetRobotStatus_Response.msg

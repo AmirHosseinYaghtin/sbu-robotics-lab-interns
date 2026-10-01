@@ -14,6 +14,11 @@ class TaskMonitor(Node):
             '/get_robot_status'
         )
 
+        self.manipulator_client = self.create_client(
+            GetRobotStatus,
+            '/get_manipulator_status'
+        )
+
         self.get_logger().info(
             'Task Monitor node has started.'
         )
@@ -36,11 +41,29 @@ class TaskMonitor(Node):
 
         return future.result()
 
+    def request_manipulator_status(self, timeout_sec=3.0):
+        if not self.manipulator_client.wait_for_service(
+            timeout_sec=timeout_sec
+        ):
+            return None
 
-def format_status(response):
+        future = self.manipulator_client.call_async(
+            GetRobotStatus.Request()
+        )
+
+        rclpy.spin_until_future_complete(
+            self,
+            future,
+            timeout_sec=timeout_sec
+        )
+
+        return future.result()
+
+
+def format_status(response, title='Robot Status'):
     lines = [
-        'Robot Status',
-        '------------',
+        title,
+        '-' * len(title),
         f'Status: {response.status}',
         f'Current Action: {response.current_action}',
     ]
@@ -77,6 +100,17 @@ def main(args=None):
     else:
         node.get_logger().error(
             'Failed to receive a response from the service.'
+        )
+
+    manipulator_response = node.request_manipulator_status()
+
+    if manipulator_response is not None:
+        print(format_status(manipulator_response, 'Manipulator Status'))
+        print()
+    else:
+        node.get_logger().warning(
+            'Service /get_manipulator_status is not available. '
+            'Is the Manipulator Controller running?'
         )
 
     node.destroy_node()

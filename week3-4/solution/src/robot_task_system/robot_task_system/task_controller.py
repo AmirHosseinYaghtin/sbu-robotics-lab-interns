@@ -10,6 +10,7 @@ from robot_task_interfaces.msg import ArmWaypoint
 from robot_task_interfaces.msg import ManipulatorCommand
 from robot_task_interfaces.msg import MoveCommand
 from robot_task_interfaces.msg import Waypoint
+from robot_task_system import plan_geometry
 from robot_task_system import plan_parser
 
 
@@ -22,9 +23,17 @@ class TaskController(Node):
 
         self.declare_parameter('plan_file', '')
         self.declare_parameter('anchor_to_origin', True)
+        self.declare_parameter('apply_approach_adjustment', True)
+        self.declare_parameter('grasp_reach', 0.20)
+        self.declare_parameter('arm_mount_x', -0.092)
+        self.declare_parameter('target_frame', 'odom')
+        self.declare_parameter('consistency_tolerance', 0.05)
+        self.declare_parameter('action_timeout', 300.0)
 
         plan_file = self.get_parameter('plan_file').value
         anchor = self.get_parameter('anchor_to_origin').value
+        self.target_frame = self.get_parameter('target_frame').value
+        self.action_timeout = self.get_parameter('action_timeout').value
 
         if not plan_file:
             self.get_logger().fatal(
@@ -41,18 +50,31 @@ class TaskController(Node):
             )
             return
 
-        plan = plan_parser.load_plan(plan_file)
-        actions = plan_parser.parse_actions(plan)
-
-        if not actions:
+        try:
+            plan, actions = plan_parser.load_and_validate(plan_file)
+        except plan_parser.PlanError as error:
             self.get_logger().fatal(
-                'plan_file "{}" contains no executable actions. '
-                'Aborting.'.format(plan_file)
+                'plan_file "{}" is invalid: {}. Aborting.'.format(
+                    plan_file,
+                    error,
+                )
             )
             return
 
         if anchor:
             self._anchor_to_origin(actions)
+
+        actions = plan_geometry.prepare_actions(
+            actions,
+            approach=self.get_parameter('apply_approach_adjustment').value,
+            grasp_reach=self.get_parameter('grasp_reach').value,
+            arm_mount_x=self.get_parameter('arm_mount_x').value,
+        )
+
+        self._log_manipulation_geometry(
+            actions,
+            self.get_parameter('consistency_tolerance').value,
+        )
 
         self.action_queue = deque(actions)
         self.plan_mode = True
@@ -74,6 +96,7 @@ class TaskController(Node):
         self.waiting_for_result = False
         self.queue_stopped = False
         self.waiting_message_logged = False
+        self.dispatched_at = None
 
         self.manipulator_publisher = self.create_publisher(
             ManipulatorCommand,
@@ -139,6 +162,15 @@ class TaskController(Node):
 
         for action in actions:
             if action['type'] != 'move_base':
+                if action.get('base_conf') is not None:
+                    action['base_conf'] = transform(*action['base_conf'])
+
+                if action.get('object_pose') is not None:
+                    action['object_pose'] = transform(
+                        action['object_pose'][0],
+                        action['object_pose'][1],
+                        0.0,
+                    )[:2]
                 continue
 
             action['waypoints'] = [
@@ -158,6 +190,29 @@ class TaskController(Node):
             )
         )
 
+    def _log_manipulation_geometry(self, actions, tolerance):
+        for action in actions:
+            if action['type'] == 'move_base':
+                continue
+
+            if action['consistency_error'] > tolerance:
+                self.get_logger().warning(
+                    '{}: planner arm goal and object pose disagree by '
+                    '{:.3f} m.'.format(
+                        action['label'],
+                        action['consistency_error'],
+                    )
+                )
+
+            if action['approach_shift']:
+                self.get_logger().info(
+                    '{}: base stops {:.3f} m closer so the object is within '
+                    'arm reach.'.format(
+                        action['label'],
+                        action['approach_shift'],
+                    )
+                )
+
     @staticmethod
     def _normalize_angle(angle):
         while angle > math.pi:
@@ -169,11 +224,22 @@ class TaskController(Node):
         return angle
 
     @staticmethod
-    def _build_manipulator_command(action):
+    def _build_manipulator_command(action, frame_id='odom'):
         message = ManipulatorCommand()
 
+        message.action_type = action['type']
         message.action_label = action['label']
         message.object_name = action['obj']
+        message.frame_id = frame_id
+
+        target = (
+            action.get('target_world')
+            or action.get('object_pose')
+            or (0.0, 0.0)
+        )
+
+        message.target_x = float(target[0])
+        message.target_y = float(target[1])
 
         grasp = action.get('grasp') or {}
 
@@ -228,6 +294,22 @@ class TaskController(Node):
             return
 
         if self.waiting_for_result:
+            elapsed = (
+                self.get_clock().now() - self.dispatched_at
+            ).nanoseconds / 1e9
+
+            if elapsed > self.action_timeout:
+                self.get_logger().error(
+                    'No result for {} within {:.0f} seconds. '
+                    'Stopping task execution.'.format(
+                        self._action_label(self.current_action),
+                        self.action_timeout,
+                    )
+                )
+
+                self.queue_stopped = True
+                self.current_action = None
+                self.waiting_for_result = False
             return
 
         if not self.action_queue:
@@ -264,6 +346,7 @@ class TaskController(Node):
 
             message = MoveCommand()
             message.action_label = next_action['label']
+            message.reverse = bool(next_action.get('reverse', False))
             message.waypoints = [
                 Waypoint(x=x, y=y, theta=theta)
                 for (x, y, theta) in waypoints
@@ -271,10 +354,12 @@ class TaskController(Node):
 
             self.move_publisher.publish(message)
             self.waiting_for_result = True
+            self.dispatched_at = self.get_clock().now()
 
             self.get_logger().info(
-                'Dispatched MOVE_BASE '
+                'Dispatched {} '
                 '({} waypoints, goal theta={:.2f}).'.format(
+                    next_action['label'],
                     len(waypoints),
                     goal[2] if goal is not None else 0.0,
                 )
@@ -298,17 +383,23 @@ class TaskController(Node):
             self.waiting_message_logged = False
             self.current_action = next_action
 
-            message = self._build_manipulator_command(next_action)
+            message = self._build_manipulator_command(
+                next_action,
+                self.target_frame,
+            )
             self.manipulator_publisher.publish(message)
 
             self.waiting_for_result = True
+            self.dispatched_at = self.get_clock().now()
 
             self.get_logger().info(
                 'Dispatched {} for {} '
-                '({} arm waypoints).'.format(
+                '(target x={:.3f}, y={:.3f} in {}).'.format(
                     next_action['type'].upper(),
                     next_action['obj'],
-                    len(next_action['arm_trajectory']),
+                    message.target_x,
+                    message.target_y,
+                    self.target_frame,
                 )
             )
 

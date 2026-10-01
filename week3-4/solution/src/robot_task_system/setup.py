@@ -17,6 +17,12 @@ setup(
             glob('launch/*.launch.py')),
         (os.path.join('share', package_name, 'config'),
             glob('config/*.json')),
+        (os.path.join('share', package_name, 'config'),
+            glob('config/*.yaml')),
+        (os.path.join('share', package_name, 'config', 'error_plans'),
+            glob('config/error_plans/*.json')),
+        (os.path.join('share', package_name, 'models'),
+            glob('models/*.sdf')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -25,7 +31,9 @@ setup(
     description='A simple ROS 2 robot task execution system with a '
                 'Task Controller, Robot Controller, and Task Monitor. '
                 'Week2 makes the pipeline PDDLStream planner-driven and '
-                'moves the real TurtleBot3 in Gazebo.',
+                'moves the real TurtleBot3 in Gazebo. Week3-4 adds the '
+                'Manipulator Controller for real PICK and PLACE with '
+                'OpenMANIPULATOR-X.',
     license='Apache-2.0',
     extras_require={
         'test': [
@@ -37,6 +45,8 @@ setup(
             'task_controller = robot_task_system.task_controller:main',
             'robot_controller = robot_task_system.robot_controller:main',
             'task_monitor = robot_task_system.task_monitor:main',
+            'manipulator_controller = '
+            'robot_task_system.manipulator_controller:main',
         ],
     },
 )

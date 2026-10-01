@@ -1,0 +1,35 @@
+/**:
+  ros__parameters:
+    anchor_to_origin: true
+    apply_approach_adjustment: true
+    grasp_reach: 0.20
+    arm_mount_x: -0.092
+
+task_controller:
+  ros__parameters:
+    target_frame: odom
+    consistency_tolerance: 0.05
+    action_timeout: 300.0
+
+manipulator_controller:
+  ros__parameters:
+    arm_topic: /arm_controller/joint_trajectory
+    gripper_action: /gripper_controller/gripper_cmd
+    joint_states_topic: /joint_states
+    joint_names: [joint1, joint2, joint3, joint4]
+    arm_base_frame: link1
+    home_joints: [0.0, -1.0, 0.3, 0.7]
+    gripper_open_position: 0.019
+    gripper_closed_position: -0.006
+    gripper_max_effort: 10.0
+    verify_grasp: true
+    grasp_detect_margin: 0.001
+    fixed_joint1: 0.0
+    grasp_joints: [0.665, -0.062, 0.967]
+    place_joints: [0.643, -0.068, 0.995]
+    grasp_reach: 0.20
+    reach_tolerance: 0.04
+    max_joint_speed: 0.2
+    min_segment_time: 1.0
+    joint_tolerance: 0.05
+
