@@ -12,6 +12,8 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Waypoint.msg"
   "msg/MoveCommand.msg"
+  "msg/ArmWaypoint.msg"
+  "msg/ManipulatorCommand.msg"
   "srv/GetRobotStatus.srv"
 )
 
