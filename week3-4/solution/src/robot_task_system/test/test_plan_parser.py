@@ -64,3 +64,40 @@ def test_summarize_lists_every_action():
     assert 'MOVE_BASE' in summary
     assert 'PICK_cube1' in summary
     assert summary.count('\n') == len(actions) - 1
+
+def test_real_plan_preserves_manipulator_data():
+    import os
+
+    config_dir = os.path.join(
+        os.path.dirname(__file__),
+        '..',
+        'config',
+    )
+
+    plan_file = os.path.abspath(
+        os.path.join(config_dir, 'plan_pick_place.json')
+    )
+
+    plan = plan_parser.load_plan(plan_file)
+    actions = plan_parser.parse_actions(plan)
+
+    pick = actions[1]
+    place = actions[3]
+
+    assert pick['type'] == 'pick'
+    assert pick['grasp']['__type__'] == 'Grasp'
+    assert pick['grasp']['obj'] == 'cube1'
+    assert len(pick['arm_start']) == 3
+    assert len(pick['arm_goal']) == 3
+    assert len(pick['arm_trajectory']) == 10
+    assert pick['arm_trajectory'][0] == pick['arm_start']
+    assert pick['arm_trajectory'][-1] == pick['arm_goal']
+
+    assert place['type'] == 'place'
+    assert place['grasp']['__type__'] == 'Grasp'
+    assert place['grasp']['obj'] == 'cube1'
+    assert len(place['arm_start']) == 3
+    assert len(place['arm_goal']) == 3
+    assert len(place['arm_trajectory']) == 10
+    assert place['arm_trajectory'][0] == place['arm_start']
+    assert place['arm_trajectory'][-1] == place['arm_goal']
