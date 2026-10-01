@@ -20,12 +20,14 @@ def _base_conf_to_tuple(conf):
         float(conf['theta']),
     )
 
+
 def _arm_conf_to_list(conf):
     return [
         float(value)
         for value in conf.get('joints', [])
     ]
-    
+
+
 def _extract_manipulation_data(args):
     grasp = next(
         (
@@ -78,6 +80,7 @@ def _extract_manipulation_data(args):
         'arm_goal': arm_goal,
         'arm_trajectory': arm_trajectory,
     }
+
 
 def parse_actions(plan):
     parsed_actions = []
@@ -138,7 +141,7 @@ def parse_actions(plan):
                 'obj': obj,
                 **manipulation,
             })
-            
+
         elif name in ('unstow_and_place', 'place_and_unstow'):
             if len(args) < 2:
                 continue
@@ -152,7 +155,7 @@ def parse_actions(plan):
                 'obj': obj,
                 **manipulation,
             })
-            
+
     return parsed_actions
 
 

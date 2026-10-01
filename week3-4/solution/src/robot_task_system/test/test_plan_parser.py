@@ -1,8 +1,15 @@
+import os
+
 from robot_task_system import plan_parser
 
 
 def _base_conf(x, y, theta):
-    return {'__type__': 'BaseConf', 'x': x, 'y': y, 'theta': theta}
+    return {
+        '__type__': 'BaseConf',
+        'x': x,
+        'y': y,
+        'theta': theta,
+    }
 
 
 def _sample_plan():
@@ -14,6 +21,7 @@ def _sample_plan():
             _base_conf(0.47, 0.26, -0.65),
         ],
     }
+
     return {
         'problem': 'get_pick_and_place_problem',
         'cost': 20.4,
@@ -39,11 +47,14 @@ def test_move_base_keeps_full_waypoints_with_theta():
     actions = plan_parser.parse_actions(_sample_plan())
 
     move = actions[0]
+
     assert move['type'] == 'move_base'
     assert move['label'] == 'MOVE_BASE'
     assert len(move['waypoints']) == 3
-    for wp in move['waypoints']:
-        assert len(wp) == 3
+
+    for waypoint in move['waypoints']:
+        assert len(waypoint) == 3
+
     assert move['waypoints'][-1] == (0.47, 0.26, -0.65)
     assert move['goal'] == (0.47, 0.26, -0.65)
 
@@ -52,6 +63,7 @@ def test_pick_action_is_labelled_per_object():
     actions = plan_parser.parse_actions(_sample_plan())
 
     pick = actions[1]
+
     assert pick['type'] == 'pick'
     assert pick['label'] == 'PICK_cube1'
     assert pick['obj'] == 'cube1'
@@ -65,9 +77,8 @@ def test_summarize_lists_every_action():
     assert 'PICK_cube1' in summary
     assert summary.count('\n') == len(actions) - 1
 
-def test_real_plan_preserves_manipulator_data():
-    import os
 
+def test_real_plan_preserves_manipulator_data():
     config_dir = os.path.join(
         os.path.dirname(__file__),
         '..',
@@ -75,7 +86,10 @@ def test_real_plan_preserves_manipulator_data():
     )
 
     plan_file = os.path.abspath(
-        os.path.join(config_dir, 'plan_pick_place.json')
+        os.path.join(
+            config_dir,
+            'plan_pick_place.json',
+        )
     )
 
     plan = plan_parser.load_plan(plan_file)

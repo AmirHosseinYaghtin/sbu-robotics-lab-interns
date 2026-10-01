@@ -5,8 +5,9 @@ from collections import deque
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool
-from std_msgs.msg import String
 
+from robot_task_interfaces.msg import ArmWaypoint
+from robot_task_interfaces.msg import ManipulatorCommand
 from robot_task_interfaces.msg import MoveCommand
 from robot_task_interfaces.msg import Waypoint
 from robot_task_system import plan_parser
@@ -21,6 +22,7 @@ class TaskController(Node):
 
         self.declare_parameter('plan_file', '')
         self.declare_parameter('anchor_to_origin', True)
+
         plan_file = self.get_parameter('plan_file').value
         anchor = self.get_parameter('anchor_to_origin').value
 
@@ -63,6 +65,7 @@ class TaskController(Node):
                 len(actions),
             )
         )
+
         self.get_logger().info(
             'Planned actions:\n' + plan_parser.summarize(actions)
         )
@@ -72,9 +75,9 @@ class TaskController(Node):
         self.queue_stopped = False
         self.waiting_message_logged = False
 
-        self.action_publisher = self.create_publisher(
-            String,
-            '/task/action',
+        self.manipulator_publisher = self.create_publisher(
+            ManipulatorCommand,
+            '/manipulator_command',
             10
         )
 
@@ -84,13 +87,11 @@ class TaskController(Node):
             10
         )
 
-        self.action_done_subscription = (
-            self.create_subscription(
-                Bool,
-                '/action_done',
-                self.action_done_callback,
-                10
-            )
+        self.action_done_subscription = self.create_subscription(
+            Bool,
+            '/action_done',
+            self.action_done_callback,
+            10
         )
 
         self.dispatch_timer = self.create_timer(
@@ -103,14 +104,14 @@ class TaskController(Node):
         )
 
         self.get_logger().info(
-            f'Queue contains '
-            f'{len(self.action_queue)} actions.'
+            f'Queue contains {len(self.action_queue)} actions.'
         )
 
         self.startup_ok = True
 
     def _anchor_to_origin(self, actions):
         start = None
+
         for action in actions:
             if action['type'] == 'move_base' and action['waypoints']:
                 start = action['waypoints'][0]
@@ -126,23 +127,34 @@ class TaskController(Node):
         def transform(x, y, theta):
             rel_x = x - start_x
             rel_y = y - start_y
+
             new_x = rel_x * cos_t - rel_y * sin_t
             new_y = rel_x * sin_t + rel_y * cos_t
-            return (new_x, new_y, self._normalize_angle(theta - start_theta))
+
+            return (
+                new_x,
+                new_y,
+                self._normalize_angle(theta - start_theta),
+            )
 
         for action in actions:
             if action['type'] != 'move_base':
                 continue
+
             action['waypoints'] = [
                 transform(x, y, theta)
                 for (x, y, theta) in action['waypoints']
             ]
-            action['goal'] = transform(*action['goal'])
+
+            if action.get('goal') is not None:
+                action['goal'] = transform(*action['goal'])
 
         self.get_logger().info(
             'Anchored plan to odom origin (start pose was '
             'x={:.2f}, y={:.2f}, theta={:.2f}).'.format(
-                start_x, start_y, start_theta
+                start_x,
+                start_y,
+                start_theta,
             )
         )
 
@@ -150,17 +162,66 @@ class TaskController(Node):
     def _normalize_angle(angle):
         while angle > math.pi:
             angle -= 2.0 * math.pi
+
         while angle < -math.pi:
             angle += 2.0 * math.pi
+
         return angle
+
+    @staticmethod
+    def _build_manipulator_command(action):
+        message = ManipulatorCommand()
+
+        message.action_label = action['label']
+        message.object_name = action['obj']
+
+        grasp = action.get('grasp') or {}
+
+        message.grasp_dx = float(grasp.get('dx', 0.0))
+        message.grasp_dy = float(grasp.get('dy', 0.0))
+        message.grasp_dtheta = float(grasp.get('dtheta', 0.0))
+
+        message.arm_start = [
+            float(value)
+            for value in (action.get('arm_start') or [])
+        ]
+
+        message.arm_goal = [
+            float(value)
+            for value in (action.get('arm_goal') or [])
+        ]
+
+        message.trajectory = []
+
+        for joints in action.get('arm_trajectory', []):
+            waypoint = ArmWaypoint()
+
+            waypoint.joints = [
+                float(value)
+                for value in joints
+            ]
+
+            message.trajectory.append(waypoint)
+
+        return message
 
     def _action_label(self, action):
         if isinstance(action, dict):
             return action['label']
+
         return action
 
     def _is_move(self, action):
-        return isinstance(action, dict) and action['type'] == 'move_base'
+        return (
+            isinstance(action, dict)
+            and action['type'] == 'move_base'
+        )
+
+    def _is_manipulation(self, action):
+        return (
+            isinstance(action, dict)
+            and action['type'] in ('pick', 'place')
+        )
 
     def try_dispatch_next_action(self):
         if self.queue_stopped:
@@ -186,6 +247,7 @@ class TaskController(Node):
                         'Waiting for Robot Controller...'
                     )
                     self.waiting_message_logged = True
+
                 return
 
             self.waiting_message_logged = False
@@ -193,7 +255,11 @@ class TaskController(Node):
 
             waypoints = list(next_action['waypoints'])
             goal = next_action.get('goal')
-            if goal is not None and (not waypoints or waypoints[-1] != goal):
+
+            if (
+                goal is not None
+                and (not waypoints or waypoints[-1] != goal)
+            ):
                 waypoints.append(goal)
 
             message = MoveCommand()
@@ -202,52 +268,72 @@ class TaskController(Node):
                 Waypoint(x=x, y=y, theta=theta)
                 for (x, y, theta) in waypoints
             ]
-            self.move_publisher.publish(message)
 
+            self.move_publisher.publish(message)
             self.waiting_for_result = True
 
             self.get_logger().info(
-                'Dispatched MOVE_BASE ({} waypoints, goal theta={:.2f}).'.format(
+                'Dispatched MOVE_BASE '
+                '({} waypoints, goal theta={:.2f}).'.format(
                     len(waypoints),
                     goal[2] if goal is not None else 0.0,
                 )
             )
+
             self.get_logger().info(
                 'Waiting for action result...'
             )
             return
 
-        if self.action_publisher.get_subscription_count() == 0:
-            if not self.waiting_message_logged:
-                self.get_logger().info(
-                    'Waiting for Robot Controller...'
-                )
-                self.waiting_message_logged = True
+        if self._is_manipulation(next_action):
+            if self.manipulator_publisher.get_subscription_count() == 0:
+                if not self.waiting_message_logged:
+                    self.get_logger().info(
+                        'Waiting for Manipulator Controller...'
+                    )
+                    self.waiting_message_logged = True
 
+                return
+
+            self.waiting_message_logged = False
+            self.current_action = next_action
+
+            message = self._build_manipulator_command(next_action)
+            self.manipulator_publisher.publish(message)
+
+            self.waiting_for_result = True
+
+            self.get_logger().info(
+                'Dispatched {} for {} '
+                '({} arm waypoints).'.format(
+                    next_action['type'].upper(),
+                    next_action['obj'],
+                    len(next_action['arm_trajectory']),
+                )
+            )
+
+            self.get_logger().info(
+                'Waiting for action result...'
+            )
             return
 
+        self.get_logger().error(
+            'Unsupported action type: {}. '
+            'Stopping task execution.'.format(
+                next_action.get('type', 'unknown')
+            )
+        )
+
+        self.queue_stopped = True
+        self.current_action = None
+        self.waiting_for_result = False
         self.waiting_message_logged = False
 
-        self.current_action = next_action
-
-        message = String()
-        message.data = self._action_label(next_action)
-
-        self.action_publisher.publish(message)
-
-        self.waiting_for_result = True
-
-        self.get_logger().info(
-            f'Dispatched action: {self._action_label(next_action)}'
-        )
-
-        self.get_logger().info(
-            'Waiting for action result...'
-        )
     def action_done_callback(self, message):
         if not self.waiting_for_result or self.current_action is None:
             self.get_logger().warning(
-                'Received an action result while no action is pending. Ignoring.'
+                'Received an action result while no action is pending. '
+                'Ignoring.'
             )
             return
 
@@ -267,13 +353,14 @@ class TaskController(Node):
             return
 
         self.get_logger().error(
-            f'Action failed: {action_label}. Stopping task execution.'
+            f'Action failed: {action_label}. '
+            'Stopping task execution.'
         )
 
         self.queue_stopped = True
         self.current_action = None
         self.waiting_for_result = False
-
+        self.waiting_message_logged = False
 
 
 def main(args=None):
@@ -283,8 +370,10 @@ def main(args=None):
 
     if not node.startup_ok:
         node.get_logger().fatal(
-            'Task Controller failed to start (no valid plan). Shutting down.'
+            'Task Controller failed to start '
+            '(no valid plan). Shutting down.'
         )
+
         node.destroy_node()
         rclpy.shutdown()
         return
