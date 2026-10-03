@@ -8,12 +8,10 @@ The program is designed to build practical skills in **robotics software develop
 
 Each week has its own directory containing the corresponding exercise or project:
 
-```text
-├── week01/
-├── week02/
-├── week03/
-└── ...
-```
+- [Week 1](week1/): initial exercises and solution.
+- [Week 2](week2/): planner-driven robot task execution.
+- [Weeks 3-4](week3-4/solution/README.md): mobile manipulation, simulated grasp
+  attachment, build and launch instructions, and verification results.
 
 Each weekly directory may contain:
 
