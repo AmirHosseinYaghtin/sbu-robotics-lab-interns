@@ -19,9 +19,16 @@
         </surface>
       </collision>
       <visual name="visual">
-        <geometry><box><size>0.025 0.025 0.025</size></box></geometry>
+        <geometry><box><size>0.03 0.03 0.03</size></box></geometry>
         <material><ambient>0.9 0.2 0.1 1</ambient><diffuse>0.9 0.2 0.1 1</diffuse></material>
       </visual>
     </link>
+    <plugin name="cube_attachment" filename="librobot_object_attachment.so">
+      <object_link>link</object_link>
+      <!-- link5 survives URDF fixed-joint reduction; end_effector_link may not. -->
+      <parent_link>link5</parent_link>
+      <grasp_offset>0.126 0 0</grasp_offset>
+      <max_grasp_distance>0.04</max_grasp_distance>
+    </plugin>
   </model>
 </sdf>

@@ -1,5 +1,8 @@
 GRIPPER = 'gripper'
 ARM = 'arm'
+ATTACHMENT = 'attachment'
+ATTACH = 'attach'
+DETACH = 'detach'
 OPEN = 'open'
 CLOSE = 'close'
 
@@ -32,22 +35,30 @@ def planner_trajectory(fixed_joint1, waypoints):
     return points
 
 
-def pick_steps(trajectory, grasp, home):
-    return [
+def pick_steps(trajectory, grasp, home, use_attachment=False):
+    steps = [
         step('OPEN_GRIPPER', GRIPPER, OPEN),
         step('FOLLOW_PLANNER_TRAJECTORY', ARM, trajectory),
         step('MOVE_GRASP', ARM, [grasp]),
+    ]
+    if use_attachment:
+        steps.append(step('ATTACH_OBJECT', ATTACHMENT, ATTACH))
+    return steps + [
         step('CLOSE_GRIPPER', GRIPPER, CLOSE),
         step('LIFT', ARM, [trajectory[-1]]),
         step('MOVE_HOME', ARM, [list(home)]),
     ]
 
 
-def place_steps(trajectory, release, home):
-    return [
+def place_steps(trajectory, release, home, use_attachment=False):
+    steps = [
         step('FOLLOW_PLANNER_TRAJECTORY', ARM, trajectory),
         step('MOVE_PLACE', ARM, [release]),
         step('OPEN_GRIPPER', GRIPPER, OPEN),
+    ]
+    if use_attachment:
+        steps.append(step('DETACH_OBJECT', ATTACHMENT, DETACH))
+    return steps + [
         step('RETREAT', ARM, [trajectory[-1]]),
         step('MOVE_HOME', ARM, [list(home)]),
     ]

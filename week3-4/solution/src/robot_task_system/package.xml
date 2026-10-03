@@ -28,6 +28,8 @@
   <exec_depend>turtlebot3_gazebo</exec_depend>
   <exec_depend>turtlebot3_manipulation_gazebo</exec_depend>
   <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>robot_object_attachment</exec_depend>
+  <exec_depend>gripper_controllers</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

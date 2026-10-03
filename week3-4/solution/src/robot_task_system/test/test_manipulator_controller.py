@@ -1,6 +1,10 @@
+from types import SimpleNamespace
+
 from action_msgs.msg import GoalStatus
 import pytest
 import rclpy
+from rclpy.parameter import Parameter
+from rclpy.task import Future
 from robot_task_interfaces.msg import ArmWaypoint
 from robot_task_interfaces.msg import ManipulatorCommand
 from robot_task_interfaces.srv import GetRobotStatus
@@ -174,3 +178,120 @@ def test_reset_clears_error(node):
     assert response.success
     assert node.status == 'IDLE'
     assert node.held_object is None
+
+
+def enable_attachment(node):
+    node.set_parameters([Parameter('use_sim_attachment', value=True)])
+
+
+def completed_attachment(node, success, operation='attach'):
+    future = Future()
+    future.add_done_callback(
+        lambda result: node.attachment_response(result, operation, 'cube1')
+    )
+    future.set_result(Trigger.Response(success=success, message='test attachment response'))
+    node.attachment_future = future
+
+
+def test_failed_attach_stops_pick_before_close_or_lift(node):
+    enable_attachment(node)
+    results = []
+    node.publish_result = results.append
+    node.current_command = command()
+    node.current_action = 'PICK_cube1'
+    node.start_steps([
+        {'name': 'ATTACH_OBJECT', 'kind': 'attachment', 'value': 'attach'},
+        {'name': 'LIFT', 'kind': 'arm', 'value': [[0.0, 0.0, 0.0, 0.0]]},
+    ])
+    node.send_attachment = lambda op: completed_attachment(node, False, op)
+    node.send_arm = lambda points: pytest.fail('Must not lift after a failed attachment')
+    node.control_loop()
+    node.control_loop()
+    assert results == [False]
+    assert node.held_object is None
+    assert node.status == node.ERROR
+
+
+def test_successful_attach_is_kept_when_lift_fails(node):
+    enable_attachment(node)
+    node.current_command = command()
+    node.current_action = 'PICK_cube1'
+    completed_attachment(node, True)
+    assert node.attachment_finished()
+    node.finish(False, 'arm timed out during lift')
+    assert node.held_object == 'cube1'
+    response = node.reset_callback(Trigger.Request(), Trigger.Response())
+    assert response.success
+    assert node.held_object == 'cube1'
+    node.validate_command(command('place'))
+
+
+def test_failed_detach_keeps_object_held(node):
+    enable_attachment(node)
+    node.held_object = 'cube1'
+    completed_attachment(node, False, 'detach')
+    with pytest.raises(StepFailure):
+        node.attachment_finished()
+    assert node.held_object == 'cube1'
+
+
+def test_confirmed_detach_clears_possession_before_retreat(node):
+    enable_attachment(node)
+    node.held_object = 'cube1'
+    completed_attachment(node, True, 'detach')
+    assert node.attachment_finished()
+    assert node.held_object is None
+
+
+def test_simulated_closed_gripper_uses_attachment_as_grasp_evidence(node):
+    enable_attachment(node)
+    node.gripper_result = FakeGripperResult(-0.010)
+    with pytest.raises(StepFailure):
+        node.gripper_finished('close')
+    completed_attachment(node, True)
+    assert node.gripper_finished('close')
+
+
+def test_reset_waits_for_pending_attachment_acknowledgement(node):
+    enable_attachment(node)
+    node.status = node.ERROR
+    node.attachment_future = Future()
+    response = node.reset_callback(Trigger.Request(), Trigger.Response())
+    assert not response.success
+    assert node.status == node.ERROR
+
+
+def test_late_attachment_acknowledgement_updates_possession(node):
+    enable_attachment(node)
+    node.status = node.ERROR
+    completed_attachment(node, True)
+    assert node.held_object == 'cube1'
+
+
+def test_waits_for_service_discovery_and_acknowledgement(node):
+    enable_attachment(node)
+    node.current_command = command()
+    future = Future()
+    client = SimpleNamespace(service_is_ready=lambda: False, call_async=lambda request: future)
+    node.attachment_clients['/cube1/attach'] = client
+    node.send_attachment('attach')
+    assert not node.attachment_finished()
+    assert node.attachment_future is None
+    client.service_is_ready = lambda: True
+    assert not node.attachment_finished()
+    assert node.attachment_future is future
+    assert node.held_object is None
+    future.set_result(Trigger.Response(success=True, message='attached'))
+    assert node.attachment_finished()
+    assert node.held_object == 'cube1'
+
+
+def test_acknowledgement_updates_possession_before_done_callback(node):
+    enable_attachment(node)
+    node.attachment_operation = 'attach'
+    node.attachment_object = 'cube1'
+    node.attachment_future = Future()
+    node.attachment_future.set_result(Trigger.Response(success=True, message='attached'))
+    assert node.held_object is None
+    assert node.attachment_finished()
+    assert node.held_object == 'cube1'

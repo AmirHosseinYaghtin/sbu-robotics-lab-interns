@@ -49,6 +49,8 @@ class ManipulatorController(Node):
         self.declare_parameter('gripper_closed_position', -0.0085)
         self.declare_parameter('gripper_max_effort', 10.0)
         self.declare_parameter('verify_grasp', True)
+        self.declare_parameter('use_sim_attachment', False)
+        self.declare_parameter('attachment_timeout', 5.0)
         self.declare_parameter('grasp_detect_margin', 0.001)
         self.declare_parameter('grasp_reach', 0.20)
         self.declare_parameter('reach_tolerance', 0.04)
@@ -75,6 +77,11 @@ class ManipulatorController(Node):
         self.step_deadline = None
         self.arm_goal = None
         self.gripper_result = None
+        self.attachment_future = None
+        self.attachment_clients = {}
+        self.attachment_client = None
+        self.attachment_operation = None
+        self.attachment_object = None
 
         self.started_at = self.now_seconds()
 
@@ -209,16 +216,17 @@ class ManipulatorController(Node):
                 fixed_joint1,
                 [list(waypoint.joints) for waypoint in message.trajectory],
             )
+            use_attachment = self.get_parameter('use_sim_attachment').value
             if message.action_type == 'pick':
                 grasp = sequence.planner_to_arm(
                     fixed_joint1, self.get_parameter('grasp_joints').value
                 )
-                steps = sequence.pick_steps(trajectory, grasp, self.home)
+                steps = sequence.pick_steps(trajectory, grasp, self.home, use_attachment)
             else:
                 release = sequence.planner_to_arm(
                     fixed_joint1, self.get_parameter('place_joints').value
                 )
-                steps = sequence.place_steps(trajectory, release, self.home)
+                steps = sequence.place_steps(trajectory, release, self.home, use_attachment)
         except (StepFailure, sequence.ManipulationError) as error:
             self.status = self.EXECUTING
             self.finish(False, str(error))
@@ -302,6 +310,8 @@ class ManipulatorController(Node):
             self.get_logger().info('[{}] {}'.format(self.current_action, current['name']))
             if current['kind'] == sequence.ARM:
                 self.send_arm(current['value'])
+            elif current['kind'] == sequence.ATTACHMENT:
+                self.send_attachment(current['value'])
             else:
                 self.send_gripper(current['value'])
             self.step_started = True
@@ -309,6 +319,8 @@ class ManipulatorController(Node):
 
         if current['kind'] == sequence.ARM:
             done = self.arm_reached()
+        elif current['kind'] == sequence.ATTACHMENT:
+            done = self.attachment_finished()
         else:
             done = self.gripper_finished(current['value'])
 
@@ -319,6 +331,62 @@ class ManipulatorController(Node):
                 self.finish(True, '')
         elif self.now_seconds() > self.step_deadline:
             raise StepFailure('{} timed out'.format(current['name']))
+
+    def send_attachment(self, operation):
+        obj = self.current_command.object_name
+        service = '/{}/{}'.format(obj, operation)
+        if service not in self.attachment_clients:
+            self.attachment_clients[service] = self.create_client(Trigger, service)
+        self.attachment_client = self.attachment_clients[service]
+        self.attachment_operation = operation
+        self.attachment_object = obj
+        self.attachment_future = None
+        self.step_deadline = self.now_seconds() + self.get_parameter('attachment_timeout').value
+
+    def attachment_response(self, future, operation, obj):
+        # Keep physical possession accurate even if a later arm step fails or
+        # an acknowledgement arrives after the controller's timeout.
+        try:
+            response = future.result()
+        except Exception:
+            return
+        if response is not None and response.success:
+            self.held_object = obj if operation == sequence.ATTACH else None
+
+    def attachment_finished(self):
+        if self.attachment_future is None:
+            # DDS discovery is asynchronous for a newly created client. Wait
+            # without blocking the node or treating discovery latency as failure.
+            if self.attachment_client.service_is_ready():
+                obj = self.attachment_object
+                operation = self.attachment_operation
+                self.attachment_future = self.attachment_client.call_async(Trigger.Request())
+                self.attachment_future.add_done_callback(
+                    lambda future: self.attachment_response(future, operation, obj)
+                )
+            elif self.now_seconds() > self.step_deadline:
+                raise StepFailure(
+                    'attachment service unavailable; build robot_object_attachment, '
+                    'source the workspace and respawn the cube'
+                )
+            return False
+        if not self.attachment_future.done():
+            return False
+        try:
+            response = self.attachment_future.result()
+        except Exception as error:
+            raise StepFailure('attachment service failed: {}'.format(error))
+        if response is None or not response.success:
+            reason = response.message if response is not None else 'empty response'
+            raise StepFailure('attachment failed: {}'.format(reason))
+        # The executor may schedule a future's done callback after this timer.
+        # Apply the acknowledgement here too before advancing to close/lift.
+        if self.attachment_operation is not None:
+            self.held_object = (
+                self.attachment_object if self.attachment_operation == sequence.ATTACH else None
+            )
+        self.get_logger().info(response.message)
+        return True
 
     def send_arm(self, points):
         trajectory = JointTrajectory()
@@ -398,6 +466,8 @@ class ManipulatorController(Node):
         status = self.gripper_result.status
         if status not in (GoalStatus.STATUS_SUCCEEDED, GoalStatus.STATUS_ABORTED):
             raise StepFailure('gripper goal finished with status {}'.format(status))
+        if self.get_parameter('use_sim_attachment').value and status != GoalStatus.STATUS_SUCCEEDED:
+            raise StepFailure('simulated gripper goal did not succeed')
 
         position = self.gripper_result.result.position
         self.get_logger().info('Gripper {} -> position {:.4f}'.format(command, position))
@@ -407,6 +477,10 @@ class ManipulatorController(Node):
         if (
             command == sequence.CLOSE
             and self.get_parameter('verify_grasp').value
+            and not (
+                self.get_parameter('use_sim_attachment').value
+                and self.held_object is not None
+            )
             and position <= closed + margin
         ):
             raise StepFailure('gripper closed completely; no object was grasped')
@@ -436,7 +510,7 @@ class ManipulatorController(Node):
             self.listen_for_commands()
             return
 
-        if success:
+        if success and not self.get_parameter('use_sim_attachment').value:
             if message.action_type == 'pick':
                 self.held_object = message.object_name
             else:
@@ -471,12 +545,18 @@ class ManipulatorController(Node):
             response.message = 'Cannot reset while executing.'
             return response
 
+        if self.attachment_future is not None and not self.attachment_future.done():
+            response.success = False
+            response.message = 'Attachment response pending; wait before resetting.'
+            return response
+
         previous = self.status
         self.status = self.IDLE
         self.current_action = None
         self.current_command = None
         self.action_started_at = None
-        self.held_object = None
+        if not self.get_parameter('use_sim_attachment').value:
+            self.held_object = None
         self.listen_for_commands()
 
         response.success = True

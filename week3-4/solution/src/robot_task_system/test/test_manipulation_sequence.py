@@ -54,3 +54,19 @@ def test_segment_duration_respects_speed_and_minimum():
     assert sequence.segment_duration([0, 0, 0, 0], [1.2, 0, 0, 0], 0.6, 1.0) == pytest.approx(2.0)
     assert sequence.segment_duration([0, 0, 0, 0], [0.1, 0, 0, 0], 0.6, 1.0) == pytest.approx(1.0)
     assert sequence.segment_duration(None, [0.1, 0, 0, 0], 0.6, 1.0) == pytest.approx(3.0)
+
+
+def test_simulated_pick_attaches_before_closing_or_lifting():
+    steps = sequence.pick_steps(TRAJECTORY, GRASP, HOME, use_attachment=True)
+    assert names(steps) == [
+        'OPEN_GRIPPER', 'FOLLOW_PLANNER_TRAJECTORY', 'MOVE_GRASP',
+        'ATTACH_OBJECT', 'CLOSE_GRIPPER', 'LIFT', 'MOVE_HOME',
+    ]
+
+
+def test_simulated_place_opens_before_detaching_and_retreating():
+    steps = sequence.place_steps(TRAJECTORY, GRASP, HOME, use_attachment=True)
+    assert names(steps) == [
+        'FOLLOW_PLANNER_TRAJECTORY', 'MOVE_PLACE', 'OPEN_GRIPPER',
+        'DETACH_OBJECT', 'RETREAT', 'MOVE_HOME',
+    ]

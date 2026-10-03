@@ -23,6 +23,8 @@ manipulator_controller:
     gripper_closed_position: -0.006
     gripper_max_effort: 10.0
     verify_grasp: true
+    use_sim_attachment: true
+    attachment_timeout: 5.0
     grasp_detect_margin: 0.001
     fixed_joint1: 0.0
     grasp_joints: [0.665, -0.062, 0.967]

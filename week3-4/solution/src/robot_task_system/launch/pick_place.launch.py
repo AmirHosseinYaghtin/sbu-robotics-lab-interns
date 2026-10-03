@@ -1,16 +1,19 @@
 import os
 
+from ament_index_python.packages import get_package_prefix
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+from launch.actions import AppendEnvironmentVariable
 from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
+from launch.actions import RegisterEventHandler
 from launch.actions import TimerAction
 from launch.conditions import IfCondition
+from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch.actions import RegisterEventHandler
-from launch.event_handlers import OnProcessExit
+
 
 def spawn_model(name, model_file, x, y, z, spawn_scene, yaw='0.0'):
     return Node(
@@ -37,6 +40,7 @@ def generate_launch_description():
     plan_file = LaunchConfiguration('plan_file')
     params_file = LaunchConfiguration('params_file')
     use_gazebo = LaunchConfiguration('use_gazebo')
+    gui = LaunchConfiguration('gui')
     spawn_scene = LaunchConfiguration('spawn_scene')
     start_delay = LaunchConfiguration('start_delay')
     x_pose = LaunchConfiguration('x_pose')
@@ -51,6 +55,7 @@ def generate_launch_description():
         DeclareLaunchArgument('plan_file', default_value=default_plan),
         DeclareLaunchArgument('params_file', default_value=default_params),
         DeclareLaunchArgument('use_gazebo', default_value='true'),
+        DeclareLaunchArgument('gui', default_value='true'),
         DeclareLaunchArgument('spawn_scene', default_value='true'),
         DeclareLaunchArgument('start_delay', default_value='20.0'),
         DeclareLaunchArgument('x_pose', default_value='0.0'),
@@ -73,7 +78,9 @@ def generate_launch_description():
             get_package_share_directory('turtlebot3_manipulation_gazebo'),
             'launch', 'gazebo.launch.py',
         )),
- 	launch_arguments={'x_pose': x_pose, 'y_pose': y_pose, 'world': world}.items(),
+        launch_arguments={
+            'x_pose': x_pose, 'y_pose': y_pose, 'world': world, 'gui': gui,
+        }.items(),
         condition=IfCondition(use_gazebo),
     )
 
@@ -116,6 +123,10 @@ def generate_launch_description():
     )
 
     return LaunchDescription(arguments + [
+        AppendEnvironmentVariable(
+            'GAZEBO_PLUGIN_PATH',
+            os.path.join(get_package_prefix('robot_object_attachment'), 'lib'),
+        ),
         gazebo,
     ] + scene + [
         robot_controller,
