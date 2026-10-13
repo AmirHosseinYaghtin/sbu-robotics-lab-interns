@@ -1,0 +1,117 @@
+import os
+
+from robot_task_system import plan_parser
+
+
+def _base_conf(x, y, theta):
+    return {
+        '__type__': 'BaseConf',
+        'x': x,
+        'y': y,
+        'theta': theta,
+    }
+
+
+def _sample_plan():
+    traj = {
+        '__type__': 'BaseTraj',
+        'waypoints': [
+            _base_conf(0.0, -1.0, 0.0),
+            _base_conf(0.2, -0.5, 0.3),
+            _base_conf(0.47, 0.26, -0.65),
+        ],
+    }
+
+    return {
+        'problem': 'get_pick_and_place_problem',
+        'cost': 20.4,
+        'actions': [
+            {
+                'name': 'move_base',
+                'args': [
+                    _base_conf(0.0, -1.0, 0.0),
+                    _base_conf(0.47, 0.26, -0.65),
+                    traj,
+                    _base_conf(0.47, 0.26, -0.65),
+                ],
+            },
+            {
+                'name': 'pick_and_stow',
+                'args': ['robot', 'cube1', 'slot0'],
+            },
+        ],
+    }
+
+
+def test_move_base_keeps_full_waypoints_with_theta():
+    actions = plan_parser.parse_actions(_sample_plan())
+
+    move = actions[0]
+
+    assert move['type'] == 'move_base'
+    assert move['label'] == 'MOVE_BASE'
+    assert len(move['waypoints']) == 3
+
+    for waypoint in move['waypoints']:
+        assert len(waypoint) == 3
+
+    assert move['waypoints'][-1] == (0.47, 0.26, -0.65)
+    assert move['goal'] == (0.47, 0.26, -0.65)
+
+
+def test_pick_action_is_labelled_per_object():
+    actions = plan_parser.parse_actions(_sample_plan())
+
+    pick = actions[1]
+
+    assert pick['type'] == 'pick'
+    assert pick['label'] == 'PICK_cube1'
+    assert pick['obj'] == 'cube1'
+
+
+def test_summarize_lists_every_action():
+    actions = plan_parser.parse_actions(_sample_plan())
+    summary = plan_parser.summarize(actions)
+
+    assert 'MOVE_BASE' in summary
+    assert 'PICK_cube1' in summary
+    assert summary.count('\n') == len(actions) - 1
+
+
+def test_real_plan_preserves_manipulator_data():
+    config_dir = os.path.join(
+        os.path.dirname(__file__),
+        '..',
+        'config',
+    )
+
+    plan_file = os.path.abspath(
+        os.path.join(
+            config_dir,
+            'plan_pick_place.json',
+        )
+    )
+
+    plan = plan_parser.load_plan(plan_file)
+    actions = plan_parser.parse_actions(plan)
+
+    pick = actions[1]
+    place = actions[3]
+
+    assert pick['type'] == 'pick'
+    assert pick['grasp']['__type__'] == 'Grasp'
+    assert pick['grasp']['obj'] == 'cube1'
+    assert len(pick['arm_start']) == 3
+    assert len(pick['arm_goal']) == 3
+    assert len(pick['arm_trajectory']) == 10
+    assert pick['arm_trajectory'][0] == pick['arm_start']
+    assert pick['arm_trajectory'][-1] == pick['arm_goal']
+
+    assert place['type'] == 'place'
+    assert place['grasp']['__type__'] == 'Grasp'
+    assert place['grasp']['obj'] == 'cube1'
+    assert len(place['arm_start']) == 3
+    assert len(place['arm_goal']) == 3
+    assert len(place['arm_trajectory']) == 10
+    assert place['arm_trajectory'][0] == place['arm_start']
+    assert place['arm_trajectory'][-1] == place['arm_goal']

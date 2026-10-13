@@ -1,0 +1,15 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from robot_task_interfaces/msg/MoveCommand.msg
+// generated code does not contain a copyright notice
+
+#include "robot_task_interfaces/msg/Waypoint.idl"
+
+module robot_task_interfaces {
+  module msg {
+    struct MoveCommand {
+      string action_label;
+
+      sequence<robot_task_interfaces::msg::Waypoint> waypoints;
+    };
+  };
+};

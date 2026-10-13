@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.8)
+project(robot_object_attachment)
+
+find_package(ament_cmake REQUIRED)
+find_package(gazebo_dev REQUIRED)
+find_package(gazebo_ros REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_srvs REQUIRED)
+
+add_library(robot_object_attachment SHARED src/object_attachment.cpp)
+target_compile_features(robot_object_attachment PUBLIC cxx_std_17)
+target_compile_options(robot_object_attachment PRIVATE -Wall -Wextra -Wpedantic)
+ament_target_dependencies(robot_object_attachment gazebo_dev gazebo_ros rclcpp std_srvs)
+install(TARGETS robot_object_attachment LIBRARY DESTINATION lib)
+ament_export_libraries(robot_object_attachment)
+ament_package()
