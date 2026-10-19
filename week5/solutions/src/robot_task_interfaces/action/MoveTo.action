@@ -1,0 +1,9 @@
+# Preserve the existing waypoint path and reversing flag.
+robot_task_interfaces/MoveCommand command
+---
+bool success
+string message
+---
+float64 distance_remaining
+int32 current_waypoint
+int32 total_waypoints

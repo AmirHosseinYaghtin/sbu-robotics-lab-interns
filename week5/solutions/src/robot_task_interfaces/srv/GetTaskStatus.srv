@@ -1,0 +1,8 @@
+---
+string plan_file
+string task_state
+string current_action
+string action_state
+int32 completed_actions
+int32 total_actions
+string message

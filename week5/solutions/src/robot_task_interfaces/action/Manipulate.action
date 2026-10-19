@@ -1,0 +1,9 @@
+# Preserve the existing manipulation command and planner metadata.
+robot_task_interfaces/ManipulatorCommand command
+---
+bool success
+string message
+---
+string current_step
+int32 completed_steps
+int32 total_steps

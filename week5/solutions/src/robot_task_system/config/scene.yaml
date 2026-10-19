@@ -1,0 +1,27 @@
+# How the Gazebo scene is built from the plan's "scene" block.
+# Plain YAML (not ROS parameters); read by launch/pick_place.launch.py and
+# robot_task_system/scene.py. Every key is optional.
+
+# pedestal: a small stand under each object and at each place pose (default;
+#           matches the calibrated grasp_joints/place_joints and keeps the
+#           planner's 0.6 m tables from blocking the TurtleBot base).
+# full:     spawn the planner's tables/workstations at full size.
+surface_mode: pedestal
+surface_height: 0.05          # top of every pedestal/table (grasp_joints assume 0.05)
+pick_pedestal_size: 0.04
+place_pedestal_size: 0.08
+
+show_regions: true            # visual-only floor plates for planner regions
+region_plate_height: 0.002
+
+obstacle_height: 0.40         # shelves, barriers, walls (collision boxes)
+obstacle_heights: {}          # per-name override, e.g. {barrier0: 0.3}
+
+object_size: 0.03             # cube edge; null = planner footprint (may not fit the gripper)
+object_mass: 0.02
+spawn_clearance: 0.001
+
+# Attachment plugin (one per object)
+parent_link: link5
+grasp_offset: [0.126, 0.0, 0.0]
+max_grasp_distance: 0.04
