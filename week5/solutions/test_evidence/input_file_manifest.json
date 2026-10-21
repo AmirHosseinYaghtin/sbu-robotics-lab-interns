@@ -1,0 +1,498 @@
+{
+  "comparison": "Uploaded week5.zip -> 67/33 handoff",
+  "input_zip_sha256": "6fe48b17355dfc5fe3c3391156de896f172543afd19528ba91f3522a31790910",
+  "files": [
+    {
+      "file": "TEST_REPORT.md",
+      "input_sha256": "4e2c07f96a7530a27a18f2be8b931d07201d110baf9699c5805f685b6d31d14d",
+      "output_sha256": "b26d30d126aa3fad4e39d90223240767d0421dc82561244b32776a437e284d74",
+      "status": "changed"
+    },
+    {
+      "file": "WEEK05.md",
+      "input_sha256": "5bccfb33d15a66b50c604cbfa1d127e34465190959d9eb50aadc87f8505a5bf9",
+      "output_sha256": "fa23601af016ecba35a44e7f40d343d5ee7faeb910adfae9934191f454fd7631",
+      "status": "changed"
+    },
+    {
+      "file": "commands.md",
+      "input_sha256": "03ccf8a39f6656ec5bf65e7aa372f774896c7e58bacbbb61428a9425d560203e",
+      "output_sha256": "03ccf8a39f6656ec5bf65e7aa372f774896c7e58bacbbb61428a9425d560203e",
+      "status": "unchanged"
+    },
+    {
+      "file": "planner_reference/export_plan.py",
+      "input_sha256": "a95a535ce6c1b2c0a204a7cc4a5020038873a52b091833d7b2c7239d49ba3f69",
+      "output_sha256": "a95a535ce6c1b2c0a204a7cc4a5020038873a52b091833d7b2c7239d49ba3f69",
+      "status": "unchanged"
+    },
+    {
+      "file": "planner_reference/sample_plan_pick_place.json",
+      "input_sha256": "32d2ba85805c9b35815fe10dccf53aa0808e47115189c752013dae6d1a08e050",
+      "output_sha256": "32d2ba85805c9b35815fe10dccf53aa0808e47115189c752013dae6d1a08e050",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_object_attachment/CMakeLists.txt",
+      "input_sha256": "a01dc13457a88f6d0f0029e33f612cec54ad96f2eb39bb150ddc6ac9158a7a53",
+      "output_sha256": "a01dc13457a88f6d0f0029e33f612cec54ad96f2eb39bb150ddc6ac9158a7a53",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_object_attachment/package.xml",
+      "input_sha256": "bc2bf71523db67f041a39e5a4b4910f5b70c8162c8f3d12e6b0dc0180075acf7",
+      "output_sha256": "bc2bf71523db67f041a39e5a4b4910f5b70c8162c8f3d12e6b0dc0180075acf7",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_object_attachment/src/object_attachment.cpp",
+      "input_sha256": "70f8930906fdb1b5b246043ac0af32b19ba6869ff25e8df2f53fd9235d38405a",
+      "output_sha256": "70f8930906fdb1b5b246043ac0af32b19ba6869ff25e8df2f53fd9235d38405a",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_interfaces/CMakeLists.txt",
+      "input_sha256": "0315a3982221db4a95a5357849f39617508cf90081fb404a6b576dafc87a109b",
+      "output_sha256": "0315a3982221db4a95a5357849f39617508cf90081fb404a6b576dafc87a109b",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_interfaces/action/Manipulate.action",
+      "input_sha256": "edcfd6fae26096e3fe774325c4c6e2e90823154f4d37f5573e28fb6c71c5f36a",
+      "output_sha256": "edcfd6fae26096e3fe774325c4c6e2e90823154f4d37f5573e28fb6c71c5f36a",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_interfaces/action/MoveTo.action",
+      "input_sha256": "5621f92534e8a1b5276574be8663c7a23519ff6fd2c6f07d153b8f59a98fa0cc",
+      "output_sha256": "5621f92534e8a1b5276574be8663c7a23519ff6fd2c6f07d153b8f59a98fa0cc",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_interfaces/msg/ArmWaypoint.msg",
+      "input_sha256": "03d33ac4ad26f0145e5c41e39d93dad9fa834ee33ed0a577f4579fa0bc48d5b1",
+      "output_sha256": "03d33ac4ad26f0145e5c41e39d93dad9fa834ee33ed0a577f4579fa0bc48d5b1",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_interfaces/msg/ManipulatorCommand.msg",
+      "input_sha256": "2d7151f9837fb275373c1ee884de23f032bfc4b8f41b3fb1ee8b56102784d226",
+      "output_sha256": "2d7151f9837fb275373c1ee884de23f032bfc4b8f41b3fb1ee8b56102784d226",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_interfaces/msg/MoveCommand.msg",
+      "input_sha256": "d35b3da07fbef9c2c13c962b52de507bb46a2cad1787ea1b1eb01ba8d2212053",
+      "output_sha256": "d35b3da07fbef9c2c13c962b52de507bb46a2cad1787ea1b1eb01ba8d2212053",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_interfaces/msg/Waypoint.msg",
+      "input_sha256": "d01cd49dd33b75ce3cd258baa39f26ffd446887b0bbd07625ccc33dad4f57aee",
+      "output_sha256": "d01cd49dd33b75ce3cd258baa39f26ffd446887b0bbd07625ccc33dad4f57aee",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_interfaces/package.xml",
+      "input_sha256": "2ab463dd39fd7b8e87da6207234416cc03fa96cf8181dd40e64da25287910c92",
+      "output_sha256": "2ab463dd39fd7b8e87da6207234416cc03fa96cf8181dd40e64da25287910c92",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_interfaces/srv/GetRobotStatus.srv",
+      "input_sha256": "7ec1837a75eadc1476ddb6c5567e10599f8725682d684ab00fcbfd9f6fdd739e",
+      "output_sha256": "7ec1837a75eadc1476ddb6c5567e10599f8725682d684ab00fcbfd9f6fdd739e",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_interfaces/srv/GetTaskStatus.srv",
+      "input_sha256": "0169cf4765fb4de73371d558167035a602e92f98a0fe0d750194cd5f38accd08",
+      "output_sha256": "0169cf4765fb4de73371d558167035a602e92f98a0fe0d750194cd5f38accd08",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/error_plans/double_pick.json",
+      "input_sha256": "57573d269c97f6a557df051b207a42f55802ed146706ae887ff7b77fb63848a1",
+      "output_sha256": "57573d269c97f6a557df051b207a42f55802ed146706ae887ff7b77fb63848a1",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/error_plans/empty_arm_trajectory.json",
+      "input_sha256": "dc923ecbb96dbbe4eb679e3d982b76a76bacd1bec8c4124e1f1a8b61828d7c45",
+      "output_sha256": "dc923ecbb96dbbe4eb679e3d982b76a76bacd1bec8c4124e1f1a8b61828d7c45",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/error_plans/empty_plan.json",
+      "input_sha256": "d637630c7279289b9f41c5f8651a6b903c5354e0d147a81ee9c304c271fce6d0",
+      "output_sha256": "d637630c7279289b9f41c5f8651a6b903c5354e0d147a81ee9c304c271fce6d0",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/error_plans/missing_arm_conf.json",
+      "input_sha256": "910e5ed59823a78172d700f3abfb299762456d6d50e53009aed48a5f1fe8ce14",
+      "output_sha256": "910e5ed59823a78172d700f3abfb299762456d6d50e53009aed48a5f1fe8ce14",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/error_plans/place_without_pick.json",
+      "input_sha256": "852a2e4e2a9519b1392e5b648448ea3e3f5df8f510a9717346590986ebd9dc1e",
+      "output_sha256": "852a2e4e2a9519b1392e5b648448ea3e3f5df8f510a9717346590986ebd9dc1e",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/error_plans/unknown_action.json",
+      "input_sha256": "3a35d124292bf8694df62ba1323716f3df3b865ad48500c6fd47413a3a9e27af",
+      "output_sha256": "3a35d124292bf8694df62ba1323716f3df3b865ad48500c6fd47413a3a9e27af",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/error_plans/unmerged_actions.json",
+      "input_sha256": "5888c9d4813efee42eb9ba96f54673a33d0276506e5cd3482b9ae6822d87171f",
+      "output_sha256": "5888c9d4813efee42eb9ba96f54673a33d0276506e5cd3482b9ae6822d87171f",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/error_plans/wrong_joint_count.json",
+      "input_sha256": "55e9b98f936dec4ed484d746b20ae44317bedd630f198b9d1e99c10cff43ec54",
+      "output_sha256": "55e9b98f936dec4ed484d746b20ae44317bedd630f198b9d1e99c10cff43ec54",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/pick_place.yaml",
+      "input_sha256": "80584bdfadfd6a13c8116de099f7d638f50627cfa2ee64f0363cef1b6154f213",
+      "output_sha256": "104123047d074d784563755991f5383e6d37c1b537e7b9966d52721231849e4f",
+      "status": "changed"
+    },
+    {
+      "file": "src/robot_task_system/config/plan_pick_place.json",
+      "input_sha256": "0b4e88c6795afcb0b9a6589c0e94a3ea14940b591a91337e740a5c0dca7656ff",
+      "output_sha256": "0b4e88c6795afcb0b9a6589c0e94a3ea14940b591a91337e740a5c0dca7656ff",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/plans/at_work.json",
+      "input_sha256": "3366da9056e436a47e8e102a264430304c09c79d72cbbd382da9c460e455c7f2",
+      "output_sha256": "3366da9056e436a47e8e102a264430304c09c79d72cbbd382da9c460e455c7f2",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/plans/corridor.json",
+      "input_sha256": "8de9f6513549e878877f0612e52b81e64de5e8dd981f3c811748d5f106305c2f",
+      "output_sha256": "8de9f6513549e878877f0612e52b81e64de5e8dd981f3c811748d5f106305c2f",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/plans/multi_object.json",
+      "input_sha256": "82c8cc61f937b528bed10980864a4ff4db8d9ecf1ba0ec752915648a5f965bb8",
+      "output_sha256": "82c8cc61f937b528bed10980864a4ff4db8d9ecf1ba0ec752915648a5f965bb8",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/plans/pick_place.json",
+      "input_sha256": "113e884ccc933d4410f812e713e06ba0cb2769b774189bf9008edafdaf49e70d",
+      "output_sha256": "113e884ccc933d4410f812e713e06ba0cb2769b774189bf9008edafdaf49e70d",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/plans/simple.json",
+      "input_sha256": "b461b0e8bf1df033a65a3470b7ad92a5b4ccdb629eba53b0bdf7b3a2430acf2d",
+      "output_sha256": "b461b0e8bf1df033a65a3470b7ad92a5b4ccdb629eba53b0bdf7b3a2430acf2d",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/config/recording_qos.yaml",
+      "input_sha256": "5a691ff9ef83a2edb4e7f805d5725322b3fffe7cc35ff2666197b6968c43807a",
+      "output_sha256": null,
+      "status": "removed"
+    },
+    {
+      "file": "src/robot_task_system/config/scene.yaml",
+      "input_sha256": "c1664ad5afec0c420726b24d24c370aaba337269963eed1df079a861ab444e3a",
+      "output_sha256": "c1664ad5afec0c420726b24d24c370aaba337269963eed1df079a861ab444e3a",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/launch/pick_place.launch.py",
+      "input_sha256": "29beab9c35f865c795662b955237ea93772ff39fe96d632b74df30a9fb0c85fe",
+      "output_sha256": "29beab9c35f865c795662b955237ea93772ff39fe96d632b74df30a9fb0c85fe",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/launch/planner_execution.launch.py",
+      "input_sha256": "82ca7049513d01cb690bcf3a9ea569072db77d693d7f1be2e4531eabae41c30a",
+      "output_sha256": "82ca7049513d01cb690bcf3a9ea569072db77d693d7f1be2e4531eabae41c30a",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/models/cube.sdf",
+      "input_sha256": "be6dcd65b58820458f99748646938f11a781e6f35537b64aa2760defe6a79b67",
+      "output_sha256": "be6dcd65b58820458f99748646938f11a781e6f35537b64aa2760defe6a79b67",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/models/pick_stand.sdf",
+      "input_sha256": "d7eb149bdfded4b4065b85d4174b896ab8fceb91ac604bb6abce254e28d98ebf",
+      "output_sha256": "d7eb149bdfded4b4065b85d4174b896ab8fceb91ac604bb6abce254e28d98ebf",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/models/place_stand.sdf",
+      "input_sha256": "ce93fcbca99bb6b8d8e568522039286e7d8ac73f4ded5e4617587239efa78165",
+      "output_sha256": "ce93fcbca99bb6b8d8e568522039286e7d8ac73f4ded5e4617587239efa78165",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/package.xml",
+      "input_sha256": "53216862165fe86ca3b9ae2fd527da341eaf2b3f87b92feb8de28c23a3da4f34",
+      "output_sha256": "02d914cea4d3998686041f2436a2e06410f6f31afd4606b2f3c72d27a7be4622",
+      "status": "changed"
+    },
+    {
+      "file": "src/robot_task_system/resource/robot_task_system",
+      "input_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/__init__.py",
+      "input_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/controller_action.py",
+      "input_sha256": "34b56c5ce38bc3cba3caf1c18688445803a1e35a4dcecbd0f283c48cff77199b",
+      "output_sha256": "34b56c5ce38bc3cba3caf1c18688445803a1e35a4dcecbd0f283c48cff77199b",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/execution_state.py",
+      "input_sha256": "4966f0cc437162f57fb66e9a397ae04bf95ec6c88d8103fa794c24f36ce1bffc",
+      "output_sha256": "4966f0cc437162f57fb66e9a397ae04bf95ec6c88d8103fa794c24f36ce1bffc",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/manipulation_sequence.py",
+      "input_sha256": "a90b421ed4ef0a667d5aa51a35e4c7224475e90cd9cb77052db00a4de2d018c0",
+      "output_sha256": "a90b421ed4ef0a667d5aa51a35e4c7224475e90cd9cb77052db00a4de2d018c0",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/manipulator_controller.py",
+      "input_sha256": "b1d030b5527493e3a215b7a5e1f31b8437d1ce5f8d9d5371b12baac91ea3a435",
+      "output_sha256": "481a4e85762e41935ddb8137848d3d553a4207ff7aa7c6a1e8d9c44852c50daa",
+      "status": "changed"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/parameter_validation.py",
+      "input_sha256": "77564816f5a0a768288f19cb9d1ff2a45df44c9ef8f963ccd96458eb39075a1c",
+      "output_sha256": "f1ca8979fe09498b8aa998c7ffe47e53f45fdbf1914782812277a282335fac74",
+      "status": "changed"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/plan_geometry.py",
+      "input_sha256": "c027d26297143598e8ea2caffa0d3e0ee6697645f1c1ce903e7470926b607590",
+      "output_sha256": "c027d26297143598e8ea2caffa0d3e0ee6697645f1c1ce903e7470926b607590",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/plan_order.py",
+      "input_sha256": "bdb7e7c00d243f29f61c1bef03e81ed17a6a54b65e8cac236e0434dfec33fb2e",
+      "output_sha256": "bdb7e7c00d243f29f61c1bef03e81ed17a6a54b65e8cac236e0434dfec33fb2e",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/plan_parser.py",
+      "input_sha256": "6171e618752bc5ee7b90db685f39f7db7ba0eaa55f44b6c2bc311d0a2fe317df",
+      "output_sha256": "6171e618752bc5ee7b90db685f39f7db7ba0eaa55f44b6c2bc311d0a2fe317df",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/planner_kinematics.py",
+      "input_sha256": "f7cd965fd0905fa615ddd12236e6bb74c6305eb1f08df34b529fefd768518641",
+      "output_sha256": "f7cd965fd0905fa615ddd12236e6bb74c6305eb1f08df34b529fefd768518641",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/robot_controller.py",
+      "input_sha256": "dd5a664190d4ba5c332d68fab02a5785cabf8b21573bc5347899cad9fb9842d7",
+      "output_sha256": "5b33b60bbbb14b8de26caa5fcc5be02f91c4a2b1687fae775c97493b5b0fbfc7",
+      "status": "changed"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/scene.py",
+      "input_sha256": "5e2577e6c371a75d99f378abcb08c5ec21594e153a16679e84bca99ed3fc2b78",
+      "output_sha256": "5e2577e6c371a75d99f378abcb08c5ec21594e153a16679e84bca99ed3fc2b78",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/task_controller.py",
+      "input_sha256": "ac5b5350c37e213fea968c36a97d146bd4accf2d5bba9c91c5812c3e0c26466e",
+      "output_sha256": "ee388b721143a66b609442adb94483683a01e661a8d1e8551b1e44081270cf25",
+      "status": "changed"
+    },
+    {
+      "file": "src/robot_task_system/robot_task_system/task_monitor.py",
+      "input_sha256": "f155da04ee94d5fa39c748b37b2e2d1720d473d5afb8c0c383f971aa0916d2b8",
+      "output_sha256": "b9a75b971df3d9af8c5a1b9f2d02dc189c70be4d9df24832ce25f8da93c2ffd8",
+      "status": "changed"
+    },
+    {
+      "file": "src/robot_task_system/setup.cfg",
+      "input_sha256": "60a0502c8472de77242360e11358b6150ba497aa14eb2c53a5cc7a29a86c85e9",
+      "output_sha256": "60a0502c8472de77242360e11358b6150ba497aa14eb2c53a5cc7a29a86c85e9",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/setup.py",
+      "input_sha256": "2ba69be9ce8f7b86cddfdffb732f16455afd2d8afa0b41e69b2b933e788c4cb0",
+      "output_sha256": "2ba69be9ce8f7b86cddfdffb732f16455afd2d8afa0b41e69b2b933e788c4cb0",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_command_building.py",
+      "input_sha256": "b2ebd6ede4afcb8279a58b34def643827dcf6b023ceeb6ad1f699f166361e708",
+      "output_sha256": "b2ebd6ede4afcb8279a58b34def643827dcf6b023ceeb6ad1f699f166361e708",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_copyright.py",
+      "input_sha256": "574bf3e769dc4c89d867a094ee02ea939a834f93f6acfe28b8b0e586e065f358",
+      "output_sha256": "574bf3e769dc4c89d867a094ee02ea939a834f93f6acfe28b8b0e586e065f358",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_flake8.py",
+      "input_sha256": "0d9705658b073e95c71dc4173f1cbe4633250dc7bd83527dd1e5c26e899c0e6b",
+      "output_sha256": "0d9705658b073e95c71dc4173f1cbe4633250dc7bd83527dd1e5c26e899c0e6b",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_manipulation_sequence.py",
+      "input_sha256": "e5665bf77eac00ebb673fb17f7d96507820ce6ea3e841cc2d3d1da8e7e772f59",
+      "output_sha256": "e5665bf77eac00ebb673fb17f7d96507820ce6ea3e841cc2d3d1da8e7e772f59",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_manipulator_controller.py",
+      "input_sha256": "4ba06ce8873e7afb32303b1dd3c6d5486b25eaec1843a7d233adb26d7f7d8392",
+      "output_sha256": "4ba06ce8873e7afb32303b1dd3c6d5486b25eaec1843a7d233adb26d7f7d8392",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_pep257.py",
+      "input_sha256": "2c2a8f9ac19efb12c18d02272706533bdaa47512d5b349143272ddfe3fed904b",
+      "output_sha256": "2c2a8f9ac19efb12c18d02272706533bdaa47512d5b349143272ddfe3fed904b",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_plan_geometry.py",
+      "input_sha256": "59df149ab438194d30a9aea8d032417d7f237a8af21ef5bf47214cb29b4de590",
+      "output_sha256": "59df149ab438194d30a9aea8d032417d7f237a8af21ef5bf47214cb29b4de590",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_plan_order.py",
+      "input_sha256": "edc929e651520aa9b9a51e0c53f944d5f64e3780892f0e611fbc3536624a4d6a",
+      "output_sha256": "edc929e651520aa9b9a51e0c53f944d5f64e3780892f0e611fbc3536624a4d6a",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_plan_parser.py",
+      "input_sha256": "1d386bf38271745e5b419e9af746d6056924f569403e0c61c2c553c15cfb226b",
+      "output_sha256": "1d386bf38271745e5b419e9af746d6056924f569403e0c61c2c553c15cfb226b",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_plan_validation.py",
+      "input_sha256": "d3a280bd0a1375b5d21f63a2d78ed3ff1e5dcb61ddf7002de76e31a270880dbb",
+      "output_sha256": "d3a280bd0a1375b5d21f63a2d78ed3ff1e5dcb61ddf7002de76e31a270880dbb",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_planner_kinematics.py",
+      "input_sha256": "c5649cc175ed2b931d2074fe2e1adb17dc38518f05308bf68307eca421f5bbab",
+      "output_sha256": "c5649cc175ed2b931d2074fe2e1adb17dc38518f05308bf68307eca421f5bbab",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_robot_controller.py",
+      "input_sha256": "f05c2c926d17eccf88d92745d1ce257e3c43c509607166c337c8772d7f660776",
+      "output_sha256": "f05c2c926d17eccf88d92745d1ce257e3c43c509607166c337c8772d7f660776",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_scene.py",
+      "input_sha256": "134cc227b20dd525b1788f87910f63b4dbc387517155598364d17950d0eac5f9",
+      "output_sha256": "134cc227b20dd525b1788f87910f63b4dbc387517155598364d17950d0eac5f9",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_task_controller.py",
+      "input_sha256": "107c0bcf7a5387c6cdbbb9f61321f22520fa5d789ec7347032f0803d9c6b13cc",
+      "output_sha256": "107c0bcf7a5387c6cdbbb9f61321f22520fa5d789ec7347032f0803d9c6b13cc",
+      "status": "unchanged"
+    },
+    {
+      "file": "src/robot_task_system/test/test_week05_execution.py",
+      "input_sha256": "8c92916ebbbb7cf42f365c75c0dc29669d54b99fe1bbbc3ef812289b19844f79",
+      "output_sha256": "8cf0d9e404a6c2af568a68879465f09911b248b021c4c8582d9973f757be788f",
+      "status": "changed"
+    },
+    {
+      "file": "src/robot_task_system/test/test_week05_ros_integration.py",
+      "input_sha256": "9d59edf9c0d5ea332d296903a839c0deb30a3e0a6a1f2cc8cef09393724125de",
+      "output_sha256": "977cbf07dc99f0a3da06d9aee240d0083b24255dc46467299f877b5e59e29b2e",
+      "status": "changed"
+    },
+    {
+      "file": "test_evidence/original_baseline.txt",
+      "input_sha256": "176b9ee4eb05cd15f34bb6d127ffd8dfbe7e48f87e3f895fc54afc51f3cccd5e",
+      "output_sha256": null,
+      "status": "removed"
+    },
+    {
+      "file": "test_evidence/original_file_hashes.json",
+      "input_sha256": "c8e60264fcdb607f482d858992fa7374528b2c3e9a346f980eba170d1ef3850f",
+      "output_sha256": null,
+      "status": "removed"
+    },
+    {
+      "file": "test_evidence/updated_offline.txt",
+      "input_sha256": "0a4e561c2251b05170c980e971c456df38a6c1d9e8546c2d9b26bbcb71e6e9b7",
+      "output_sha256": null,
+      "status": "removed"
+    },
+    {
+      "file": "test_evidence/updated_pure.txt",
+      "input_sha256": "50b936605f181ad0c29a0b4c2320e95d73defb23062ce414369d1122f8d9a57e",
+      "output_sha256": null,
+      "status": "removed"
+    },
+    {
+      "file": "tools/offline_ros_stubs.py",
+      "input_sha256": "8ce86836feeb015a8d294cc07f5711c274341312ad0079e8c95755c7fb796e0f",
+      "output_sha256": "05da2f738396276b3eb306e28a7aa038b2be27d78b1dd5251c34de18ef6e3194",
+      "status": "changed"
+    },
+    {
+      "file": "tools/run_offline_tests.py",
+      "input_sha256": "1776676b93d25ff8b984dca3c268bba0e396ab4c475fc29f060af69927d3210f",
+      "output_sha256": "b802dcbadae3ca15591c70c43f5e534a86253b92823e1d7c21b8c3a1297d568c",
+      "status": "changed"
+    },
+    {
+      "file": "tools/verify_bag.py",
+      "input_sha256": "1f183875ac695ca20dc4e21f2fcb96ebbf2be3154d2acb902f88ec2e62309e67",
+      "output_sha256": "4f530462ca6bdc63571f50beda7876016f925abf045a7deb0593b882a0019666",
+      "status": "changed"
+    },
+    {
+      "file": "tools/verify_pick_place.py",
+      "input_sha256": "1bec593e404ee81a9d6d042af0b8db2508f652e62632c14e381b9b5e7b03a82c",
+      "output_sha256": "57a7d697ab8ec36c786f3273aa21da54cea974ea27a86bc5cd6b06d3c03be764",
+      "status": "changed"
+    }
+  ]
+}

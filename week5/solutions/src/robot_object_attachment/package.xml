@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>robot_object_attachment</name>
+  <version>0.0.0</version>
+  <description>Temporary fixed-joint grasps for Gazebo Classic pick and place.</description>
+  <maintainer email="mohammad05@todo.todo">mohammad05</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>gazebo_dev</depend>
+  <depend>gazebo_ros</depend>
+  <depend>rclcpp</depend>
+  <depend>std_srvs</depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+    <gazebo_ros plugin_path="${prefix}/../../lib"/>
+  </export>
+</package>

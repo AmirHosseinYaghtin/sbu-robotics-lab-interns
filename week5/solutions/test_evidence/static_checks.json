@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-19",
+  "environment": "Windows / Python 3.12.4 / no ROS",
+  "branch": "week03-04-exercise",
+  "branch_commit": "bfe36088f52701f3d9732fa63607d45a88d0b9a7",
+  "split_method": "Engineering effort estimate for week-five features, not LOC",
+  "retained_weight": 67,
+  "remaining_weight": 33,
+  "remaining_weights": {
+    "TODO-W5-01": 10,
+    "TODO-W5-02": 9,
+    "TODO-W5-03": 14
+  },
+  "syntax": {
+    ".py": {
+      "files": 40,
+      "passed": true
+    }
+  },
+  "parse": {
+    ".json": {
+      "files": 16,
+      "passed": true
+    },
+    ".yaml": {
+      "files": 2,
+      "passed": true
+    },
+    ".xml": {
+      "files": 3,
+      "passed": true
+    },
+    ".sdf": {
+      "files": 3,
+      "passed": true
+    }
+  },
+  "smoke": [
+    {
+      "command": "python tools/verify_pick_place.py --record-bag unused",
+      "exit": 2,
+      "TODO_before_ROS": true
+    },
+    {
+      "command": "python tools/verify_bag.py unused",
+      "exit": 2,
+      "TODO_before_ROS": true
+    }
+  ],
+  "interface_paths": {
+    "count": 8,
+    "passed": true
+  },
+  "provided_manifest_input_matches": {
+    "matched": 64,
+    "total": 64
+  },
+  "pre_week05_files_protected": {
+    "unchanged": 54,
+    "passed": true
+  },
+  "core_files_byte_identical": [
+    "src/robot_task_system/robot_task_system/controller_action.py",
+    "src/robot_task_system/robot_task_system/execution_state.py",
+    "src/robot_task_interfaces/action/MoveTo.action",
+    "src/robot_task_interfaces/action/Manipulate.action"
+  ],
+  "literal_parameter_reads_declared": true,
+  "preserved_startup_yaml_values": true
+}

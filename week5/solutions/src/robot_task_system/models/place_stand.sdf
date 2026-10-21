@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <model name="place_stand">
+    <static>true</static>
+    <link name="link">
+      <pose>0 0 0.025 0 0 0</pose>
+      <collision name="collision">
+        <geometry><box><size>0.08 0.08 0.05</size></box></geometry>
+      </collision>
+      <visual name="visual">
+        <geometry><box><size>0.08 0.08 0.05</size></box></geometry>
+        <material><ambient>0.2 0.7 0.2 1</ambient><diffuse>0.2 0.7 0.2 1</diffuse></material>
+      </visual>
+    </link>
+  </model>
+</sdf>
