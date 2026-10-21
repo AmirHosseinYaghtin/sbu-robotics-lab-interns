@@ -9,7 +9,6 @@ import time
 import pytest
 rclpy = pytest.importorskip('rclpy')
 from rclpy.action import ActionClient
-from rclpy.duration import Duration
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
 from rclpy.parameter import Parameter
@@ -60,8 +59,8 @@ def accept(executor, client, request):
 
 def test_ros_no_odom_aborts_with_reason(graph):
     executor, base, _, client = graph
+    assert base.set_parameters([Parameter('initial_odom_timeout', value=0.2)])[0].successful
     handle = accept(executor, client, goal())
-    base.odom_deadline = base.get_clock().now() - Duration(seconds=1.0)
     future = handle.get_result_async()
     spin_until(executor, future.done)
     assert future.result().status == 6
@@ -120,13 +119,12 @@ def test_ros_software_stop_aborts_and_latches(graph):
 
 def test_ros_base_failure_stops_task_before_pick(graph):
     executor, base, _, _ = graph
+    assert base.set_parameters([Parameter('initial_odom_timeout', value=0.2)])[0].successful
     plan = Path(__file__).resolve().parents[1] / 'config/plan_pick_place.json'
     task = TaskController(parameter_overrides=[Parameter('plan_file', value=str(plan))])
     assert task.startup_ok
     executor.add_node(task)
     try:
-        spin_until(executor, lambda: base.moving)
-        base.odom_deadline = base.get_clock().now() - Duration(seconds=1.0)
         spin_until(executor, lambda: task.state.task_state == 'FAILED')
         assert task.state.completed_actions == 0
         assert len(task.action_queue) == task.state.total_actions

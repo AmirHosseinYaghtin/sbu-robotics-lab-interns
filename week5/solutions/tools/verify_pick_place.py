@@ -21,6 +21,11 @@ import subprocess
 import time
 import xml.etree.ElementTree as ET
 
+from ament_index_python.packages import get_package_share_directory
+from gazebo_msgs.srv import GetEntityState
+import rclpy
+from robot_task_system import scene as scene_builder
+
 ROBOT = 'turtlebot3_manipulation_system'
 # The manipulator logs 'Received PICK_x for object "x"' before it calls that
 # object's attach/detach service, whose reply is logged as 'Object attached to'
@@ -36,15 +41,10 @@ def parse_args():
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--map', help='map name in config/plans, e.g. corridor')
     group.add_argument('--plan', help='absolute path to a plan JSON')
-    parser.add_argument('--record-bag', help='reserved for TODO-W5-03 recording support')
+    parser.add_argument('--record-bag', help='new output bag directory; then info and isolated replay')
     parser.add_argument('--timeout', type=float, default=None,
                         help='seconds (default: 480 + 240 per manipulation)')
-    args = parser.parse_args()
-    if args.record_bag is not None:
-        parser.error(
-            'TODO-W5-03: implement rosbag2 recording, bag info and isolated playback; '
-            'no simulation has been started.')
-    return args
+    return parser.parse_args()
 
 
 def resolve_plan(args, share):
@@ -56,9 +56,6 @@ def resolve_plan(args, share):
 
 
 def entity_position(node, client, name, frame):
-    from gazebo_msgs.srv import GetEntityState
-    import rclpy
-
     request = GetEntityState.Request()
     request.name = name
     request.reference_frame = frame
@@ -72,11 +69,6 @@ def entity_position(node, client, name, frame):
 
 def main():
     args = parse_args()
-    from ament_index_python.packages import get_package_share_directory
-    from gazebo_msgs.srv import GetEntityState
-    import rclpy
-    from robot_task_system import scene as scene_builder
-
     share = get_package_share_directory('robot_task_system')
     plan_file = resolve_plan(args, share)
     config = scene_builder.load_config(os.path.join(share, 'config', 'scene.yaml'))
@@ -111,7 +103,28 @@ def main():
     node = rclpy.create_node('pick_place_verification')
     state = node.create_client(GetEntityState, '/gazebo/get_entity_state')
     process = None
+    recorder = None
+    recorder_log = None
+    success = False
+    recorder_timed_out = False
+    bag_path = os.path.abspath(args.record_bag) if args.record_bag else None
     try:
+        if bag_path:
+            if os.path.exists(bag_path):
+                raise RuntimeError('Bag output already exists: ' + bag_path)
+            recorder_log = (output / 'recorder.log').open('w')
+            topics = ['/task/status', '/odom', '/tf', '/tf_static', '/joint_states',
+                      '/scan', '/cmd_vel', '/clock',
+                      '/move_to/_action/status', '/move_to/_action/feedback',
+                      '/manipulate/_action/status', '/manipulate/_action/feedback']
+            recorder = subprocess.Popen([
+                'ros2', 'bag', 'record', '--use-sim-time', '--include-hidden-topics',
+                '--qos-profile-overrides-path', os.path.join(share, 'config', 'recording_qos.yaml'),
+                '-o', bag_path, *topics], stdout=recorder_log, stderr=subprocess.STDOUT,
+                start_new_session=True)
+            time.sleep(1.0)
+            if recorder.poll() is not None:
+                raise RuntimeError('Recorder failed; inspect ' + str(output / 'recorder.log'))
         with log_path.open('w') as log:
             process = subprocess.Popen([
                 'ros2', 'launch', 'robot_task_system', 'pick_place.launch.py',
@@ -175,6 +188,7 @@ def main():
                             obj, p[0], p[1], p[2], error), flush=True)
                     print('PASS: {} objects placed; max held drift {:.6f} m'.format(
                         len(expected), drift), flush=True)
+                    success = True
                     return
                 time.sleep(0.5)
             raise RuntimeError('Simulation timed out; inspect ' + str(log_path))
@@ -186,9 +200,28 @@ def main():
             except subprocess.TimeoutExpired:
                 os.killpg(process.pid, signal.SIGTERM)
                 process.wait(timeout=10)
+        if recorder is not None and recorder.poll() is None:
+            os.killpg(recorder.pid, signal.SIGINT)
+            try:
+                recorder.wait(timeout=20)
+            except subprocess.TimeoutExpired:
+                os.killpg(recorder.pid, signal.SIGTERM)
+                recorder.wait(timeout=10)
+                recorder_timed_out = True
+        if recorder_log is not None:
+            recorder_log.close()
         node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
+        if recorder_timed_out:
+            raise RuntimeError('Recorder did not finalize normally; bag verification failed')
+        if bag_path and success:
+            info = subprocess.run(['ros2', 'bag', 'info', bag_path], check=True,
+                                  capture_output=True, text=True)
+            (output / 'bag_info.txt').write_text(info.stdout)
+            print(info.stdout, flush=True)
+            subprocess.run(['python3', str(workspace / 'tools' / 'verify_bag.py'), bag_path],
+                           check=True)
 
 
 if __name__ == '__main__':

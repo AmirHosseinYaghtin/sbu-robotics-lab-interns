@@ -1,9 +1,4 @@
-"""Startup guards and a conservative fallback for TODO-W5-02.
-
-Dynamic parameter configuration is deliberately unfinished. Keep startup safety
-checks; reject managed changes until the teammate implements the idle/active
-policy and restores the execution-limit parameters.
-"""
+"""Validate configurable execution limits without callback side effects."""
 import math
 from rcl_interfaces.msg import SetParametersResult
 
@@ -12,21 +7,19 @@ def positive(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value > 0.0
 
 
-def validate_startup(node, rules):
+def install_validation(node, rules, startup_only=()):
+    def check(parameters):
+        for parameter in parameters:
+            name, value = parameter.name, parameter.value
+            if name in startup_only:
+                return SetParametersResult(successful=False, reason=name + ' requires restart')
+            if name in rules:
+                if not rules[name](value):
+                    return SetParametersResult(successful=False, reason='invalid ' + name)
+                if getattr(node, 'status', 'IDLE') != 'IDLE':
+                    return SetParametersResult(successful=False, reason='execution settings change only while IDLE')
+        return SetParametersResult(successful=True)
     for name, rule in rules.items():
         if not rule(node.get_parameter(name).value):
             raise ValueError('invalid initial parameter: ' + name)
-
-
-def freeze_parameters(node, names):
-    managed = frozenset(names)
-
-    def check(parameters):
-        for parameter in parameters:
-            if parameter.name in managed:
-                return SetParametersResult(
-                    successful=False,
-                    reason='TODO-W5-02: execution settings are frozen; restart for existing startup settings')
-        return SetParametersResult(successful=True)
-
     node.add_on_set_parameters_callback(check)

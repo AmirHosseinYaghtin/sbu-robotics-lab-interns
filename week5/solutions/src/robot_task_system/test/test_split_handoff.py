@@ -1,4 +1,4 @@
-"""Retained behavior at the three unfinished feature boundaries."""
+"""Regression checks retained from the 67/33 handoff and updated for completion."""
 from pathlib import Path
 
 import pytest
@@ -27,22 +27,21 @@ def test_fixed_speed_final_approach_keeps_direction_and_limit(reverse):
         rclpy.shutdown()
 
 
-def test_existing_arm_settings_remain_frozen_until_parameter_task_is_done():
+def test_existing_arm_settings_can_change_while_idle():
     from robot_task_system.manipulator_controller import ManipulatorController
     rclpy.init()
     arm = ManipulatorController()
     try:
         arm.status = arm.IDLE
-        before = arm.get_parameter('max_joint_speed').value
         result = arm.set_parameters([Parameter('max_joint_speed', value=0.1)])[0]
-        assert not result.successful
-        assert arm.get_parameter('max_joint_speed').value == before
+        assert result.successful
+        assert arm.get_parameter('max_joint_speed').value == 0.1
     finally:
         arm.destroy_node()
         rclpy.shutdown()
 
 
-def test_full_task_starts_and_dispatches_without_external_status_feature():
+def test_full_task_starts_and_dispatches_with_external_status_feature():
     plan = Path(__file__).resolve().parents[1] / 'config/plan_pick_place.json'
     rclpy.init()
     task = TaskController(parameter_overrides=[Parameter('plan_file', value=str(plan))])

@@ -6,7 +6,7 @@ from std_srvs.srv import Trigger
 from robot_task_interfaces.srv import GetRobotStatus
 from robot_task_interfaces.action import MoveTo
 from robot_task_system.controller_action import ControllerAction
-from robot_task_system.parameter_validation import freeze_parameters
+from robot_task_system.parameter_validation import install_validation, positive
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
@@ -21,7 +21,6 @@ class RobotController(Node):
     FINAL_TOL = 0.02
     GOAL_THETA_TOL = 0.03
     MIN_FINAL_SPEED = 0.03
-    LINEAR_SPEED = 0.15
     # Large maps (multi_object tables are ~7 m apart) need long moves.
     MAX_MOVE_TIME = 600.0
     ODOM_TIMEOUT = 5.0
@@ -94,12 +93,20 @@ class RobotController(Node):
         self.progress_ref_y = None
         self.progress_deadline = None
 
-        # TODO-W5-02: replace these fixed limits with validated ROS parameters.
-        # Reject attempts to change the unfinished settings, including in doubles.
-        freeze_parameters(self, (
-            'waypoint_tolerance', 'final_tolerance', 'goal_theta_tolerance',
-            'max_move_time', 'odom_timeout', 'initial_odom_timeout',
-            'stuck_time', 'stuck_distance', 'linear_speed'))
+        limits = {
+            'waypoint_tolerance': self.WAYPOINT_TOL,
+            'final_tolerance': self.FINAL_TOL,
+            'goal_theta_tolerance': self.GOAL_THETA_TOL,
+            'max_move_time': self.MAX_MOVE_TIME,
+            'odom_timeout': self.ODOM_TIMEOUT,
+            'initial_odom_timeout': self.INITIAL_ODOM_TIMEOUT,
+            'stuck_time': self.STUCK_TIME,
+            'stuck_distance': self.STUCK_DIST,
+            'linear_speed': 0.15,
+        }
+        for name, value in limits.items():
+            self.declare_parameter(name, value)
+        install_validation(self, {name: positive for name in limits})
         self.execution = ControllerAction(
             self, MoveTo, '/move_to', self.move_command_callback,
             self.validate_move, self.move_feedback, self.stop_for_cancel)
@@ -203,14 +210,14 @@ class RobotController(Node):
         self.moving = True
 
         now = self.get_clock().now()
-        self.move_deadline = now + Duration(seconds=self.MAX_MOVE_TIME)
-        self.odom_deadline = now + Duration(seconds=self.INITIAL_ODOM_TIMEOUT)
+        self.move_deadline = now + Duration(seconds=self.get_parameter('max_move_time').value)
+        self.odom_deadline = now + Duration(seconds=self.get_parameter('initial_odom_timeout').value)
         self.odom_warn_deadline = now + Duration(
             seconds=self.ODOM_WARN_INTERVAL
         )
         self.progress_ref_x = None
         self.progress_ref_y = None
-        self.progress_deadline = now + Duration(seconds=self.STUCK_TIME)
+        self.progress_deadline = now + Duration(seconds=self.get_parameter('stuck_time').value)
 
     def normalize_angle(self, angle):
         while angle > math.pi:
@@ -262,7 +269,7 @@ class RobotController(Node):
                     seconds=self.ODOM_WARN_INTERVAL
                 )
             return
-        if (now - self.last_odom_time) > Duration(seconds=self.ODOM_TIMEOUT):
+        if (now - self.last_odom_time) > Duration(seconds=self.get_parameter('odom_timeout').value):
             self.fail_move('/odom feed lost')
             return
 
@@ -276,7 +283,7 @@ class RobotController(Node):
                 self.final_theta - self.current_yaw
             )
 
-            if abs(yaw_error) < self.GOAL_THETA_TOL:
+            if abs(yaw_error) < self.get_parameter('goal_theta_tolerance').value:
                 self.moving = False
                 self.rotating_final = False
                 self.reverse = False
@@ -306,7 +313,7 @@ class RobotController(Node):
         )
 
         is_last = self.waypoint_index == len(self.trajectory) - 1
-        tolerance = self.FINAL_TOL if is_last else self.WAYPOINT_TOL
+        tolerance = self.get_parameter('final_tolerance').value if is_last else self.get_parameter('waypoint_tolerance').value
         overshoot = (
             is_last
             and distance < 2.0 * tolerance
@@ -316,17 +323,17 @@ class RobotController(Node):
         if self.progress_ref_x is None:
             self.progress_ref_x = self.current_x
             self.progress_ref_y = self.current_y
-            self.progress_deadline = now + Duration(seconds=self.STUCK_TIME)
+            self.progress_deadline = now + Duration(seconds=self.get_parameter('stuck_time').value)
         else:
             moved = math.hypot(
                 self.current_x - self.progress_ref_x,
                 self.current_y - self.progress_ref_y,
             )
-            if moved > self.STUCK_DIST:
+            if moved > self.get_parameter('stuck_distance').value:
                 self.progress_ref_x = self.current_x
                 self.progress_ref_y = self.current_y
                 self.progress_deadline = (
-                    now + Duration(seconds=self.STUCK_TIME)
+                    now + Duration(seconds=self.get_parameter('stuck_time').value)
                 )
             elif (
                 self.progress_deadline is not None
@@ -354,7 +361,7 @@ class RobotController(Node):
         if abs(angle_error) > 0.15:
             command.angular.z = 0.5 * angle_error
         else:
-            speed = self.LINEAR_SPEED
+            speed = self.get_parameter('linear_speed').value
 
             if is_last:
                 speed = min(speed, max(self.MIN_FINAL_SPEED, 0.8 * distance))

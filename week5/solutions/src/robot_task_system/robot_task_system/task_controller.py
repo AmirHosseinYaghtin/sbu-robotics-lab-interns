@@ -4,13 +4,17 @@ from collections import deque
 
 import rclpy
 from rclpy.node import Node
+import json
 import time
 from action_msgs.msg import GoalStatus
 from rclpy.action import ActionClient
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
+from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from robot_task_interfaces.action import MoveTo, Manipulate
+from robot_task_interfaces.srv import GetTaskStatus
 from robot_task_system.execution_state import TaskState
-from robot_task_system.parameter_validation import validate_startup, freeze_parameters, positive
+from robot_task_system.parameter_validation import install_validation, positive
 
 from robot_task_interfaces.msg import ArmWaypoint
 from robot_task_interfaces.msg import ManipulatorCommand
@@ -24,12 +28,6 @@ from robot_task_system import scene
 
 class TaskController(Node):
 
-    # TODO-W5-02: expose execution limits as validated ROS parameters.
-    # Match the completed project's shipped pick_place.yaml values for now.
-    ACTION_TIMEOUT = 900.0
-    SERVER_TIMEOUT = 120.0
-    CANCEL_TIMEOUT = 20.0
-
     def __init__(self, **node_options):
         super().__init__('task_controller', **node_options)
 
@@ -42,19 +40,22 @@ class TaskController(Node):
         self.declare_parameter('arm_mount_x', -0.092)
         self.declare_parameter('target_frame', 'odom')
         self.declare_parameter('consistency_tolerance', 0.05)
-        validate_startup(self, {'grasp_reach': positive, 'consistency_tolerance': positive})
+        self.declare_parameter('action_timeout', 300.0)
+        self.declare_parameter('server_timeout', 120.0)
+        self.declare_parameter('cancel_timeout', 20.0)
+        install_validation(self, {'action_timeout': positive, 'server_timeout': positive,
+                                  'cancel_timeout': positive, 'grasp_reach': positive,
+                                  'consistency_tolerance': positive})
         # The gripper holds one object: plans that pick several objects
         # before placing them are reordered into pick -> place pairs.
         self.declare_parameter('one_object_at_a_time', True)
         # m the base keeps from tables/obstacles on the new (reordered) paths.
         self.declare_parameter('route_clearance', plan_order.DEFAULT_CLEARANCE)
 
-        validate_startup(self, {'route_clearance': positive})
-        freeze_parameters(self, (
+        install_validation(self, {'route_clearance': positive}, startup_only=(
             'plan_file', 'anchor_to_origin', 'apply_approach_adjustment', 'grasp_reach',
             'arm_mount_x', 'target_frame', 'consistency_tolerance',
-            'one_object_at_a_time', 'route_clearance',
-            'action_timeout', 'server_timeout', 'cancel_timeout'))
+            'one_object_at_a_time', 'route_clearance'))
         plan_file = self.get_parameter('plan_file').value
         anchor = self.get_parameter('anchor_to_origin').value
         self.target_frame = self.get_parameter('target_frame').value
@@ -147,10 +148,13 @@ class TaskController(Node):
         self.cancel_started = None
         self.wait_started = time.monotonic()
         self.last_feedback = None
+        self.last_status = None
         self.move_client = ActionClient(self, MoveTo, '/move_to')
         self.manipulator_client = ActionClient(self, Manipulate, '/manipulate')
-        # TODO-W5-01: wire /task/status and /get_task_status from self.state.
-        # GetTaskStatus.srv remains the agreed interface, with no server yet.
+        qos = QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE,
+                         durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.status_publisher = self.create_publisher(String, '/task/status', qos)
+        self.status_service = self.create_service(GetTaskStatus, '/get_task_status', self.get_task_status)
         self.cancel_service = self.create_service(Trigger, '/task/cancel', self.cancel_task)
         self.emergency_service = self.create_service(Trigger, '/task/emergency_stop', self.emergency_stop)
         self.stop_clients = [self.create_client(Trigger, name) for name in (
@@ -275,9 +279,15 @@ class TaskController(Node):
         )
 
     def publish_status(self):
-        """TODO-W5-01: publish changes without changing execution state."""
-        # Intentional scaffold. Internal state and terminal logs still work.
-        return None
+        payload = json.dumps(self.state.snapshot(), sort_keys=True)
+        if payload != self.last_status:
+            self.status_publisher.publish(String(data=payload))
+            self.last_status = payload
+
+    def get_task_status(self, request, response):
+        for key, value in self.state.snapshot().items():
+            setattr(response, key, value)
+        return response
 
     def stop_task(self, reason, emergency=False, failure=False):
         self.state.stop(reason, emergency=emergency, failure=failure)
@@ -293,7 +303,7 @@ class TaskController(Node):
             return response
         self.stop_task('task cancellation requested')
         response.success = True
-        response.message = 'Cancellation requested; inspect terminal logs for outcome'
+        response.message = 'Cancellation requested; inspect /task/status for terminal outcome'
         return response
 
     def emergency_stop(self, request, response):
@@ -350,7 +360,7 @@ class TaskController(Node):
         if self.state.task_state in TaskState.TERMINAL or self.state.task_state == 'CANCELING':
             self.request_cancel()
             pending = self.goal_future is not None or self.goal_handle is not None
-            if pending and self.cancel_started is not None and time.monotonic() - self.cancel_started > self.CANCEL_TIMEOUT:
+            if pending and self.cancel_started is not None and time.monotonic() - self.cancel_started > self.get_parameter('cancel_timeout').value:
                 if self.state.action_state != 'STOP_UNCONFIRMED':
                     self.state.action_state = 'STOP_UNCONFIRMED'
                     self.state.message = 'Cancellation/result acknowledgement timeout; physical stop unconfirmed'
@@ -362,7 +372,7 @@ class TaskController(Node):
                     self.publish_status()
             return
         if self.goal_future is not None or self.goal_handle is not None:
-            if time.monotonic() - self.dispatched_at > self.ACTION_TIMEOUT:
+            if time.monotonic() - self.dispatched_at > self.get_parameter('action_timeout').value:
                 self.stop_task('action/goal response timeout', failure=True)
             return
         if not self.action_queue:
@@ -370,7 +380,7 @@ class TaskController(Node):
         action = self.action_queue[0]
         client = self.move_client if self._is_move(action) else self.manipulator_client
         if not client.server_is_ready():
-            if time.monotonic() - self.wait_started > self.SERVER_TIMEOUT:
+            if time.monotonic() - self.wait_started > self.get_parameter('server_timeout').value:
                 self.stop_task('action server unavailable', failure=True)
             return
         self.current_action = action

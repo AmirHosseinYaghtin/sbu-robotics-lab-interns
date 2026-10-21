@@ -11,7 +11,8 @@ from rclpy.node import Node
 from rclpy.time import Time
 from robot_task_interfaces.action import Manipulate
 from robot_task_system.controller_action import ControllerAction
-from robot_task_system.parameter_validation import validate_startup, freeze_parameters, positive
+from robot_task_system.parameter_validation import install_validation, positive
+from rcl_interfaces.msg import SetParametersResult
 from robot_task_interfaces.srv import GetRobotStatus
 from robot_task_system import manipulation_sequence as sequence
 from sensor_msgs.msg import JointState
@@ -34,10 +35,6 @@ class ManipulatorController(Node):
     EXECUTING = 'EXECUTING'
     ERROR = 'ERROR'
     STARTING = 'STARTING'
-    # TODO-W5-02: make execution deadlines configurable with validation.
-    ARM_TIMEOUT_MARGIN = 10.0
-    GRIPPER_TIMEOUT = 10.0
-    STARTUP_TIMEOUT = 120.0
 
     def __init__(self):
         super().__init__('manipulator_controller')
@@ -66,6 +63,9 @@ class ManipulatorController(Node):
         self.declare_parameter('max_joint_speed', 0.3)
         self.declare_parameter('min_segment_time', 1.0)
         self.declare_parameter('joint_tolerance', 0.05)
+        self.declare_parameter('arm_timeout_margin', 10.0)
+        self.declare_parameter('gripper_timeout', 10.0)
+        self.declare_parameter('startup_timeout', 120.0)
         # OpenMANIPULATOR-X joint limits (turtlebot3_manipulation URDF).
         # Invalid calibrated poses are rejected; clamping changes grasp geometry.
         self.declare_parameter('joint_lower_limits', [-2.827, -1.791, -0.942, -1.791])
@@ -142,16 +142,10 @@ class ManipulatorController(Node):
             self, Manipulate, '/manipulate', self.command_callback,
             self.validate_action_goal, self.manipulation_feedback, self.stop_for_cancel, defer=True)
         numeric = ['max_joint_speed', 'min_segment_time', 'joint_tolerance',
+                   'arm_timeout_margin', 'gripper_timeout', 'startup_timeout',
                    'attachment_timeout', 'grasp_reach', 'reach_tolerance']
-        validate_startup(self, {name: positive for name in numeric})
-        freeze_parameters(self, numeric + [
-            'arm_timeout_margin', 'gripper_timeout', 'startup_timeout',
-            'joint_names', 'home_joints', 'fixed_joint1', 'clearance_joints',
-            'grasp_joints', 'place_joints', 'joint_lower_limits', 'joint_upper_limits',
-            'joint_limit_margin', 'use_sim_attachment', 'arm_topic', 'gripper_action',
-            'joint_states_topic', 'arm_base_frame', 'gripper_open_position',
-            'gripper_closed_position', 'gripper_max_effort', 'verify_grasp',
-            'grasp_detect_margin'])
+        install_validation(self, {name: positive for name in numeric})
+        self.add_on_set_parameters_callback(self.validate_parameter_update)
 
         self.timer = self.create_timer(0.1, self.control_loop)
 
@@ -202,7 +196,7 @@ class ManipulatorController(Node):
             ])
             return
 
-        if self.now_seconds() - self.started_at > self.STARTUP_TIMEOUT:
+        if self.now_seconds() - self.started_at > self.get_parameter('startup_timeout').value:
             self.get_logger().error(
                 'Startup failed (arm controller ready: {}, gripper controller ready: {}, '
                 'joint states received: {}). Manipulator Controller is in ERROR state.'.format(
@@ -216,6 +210,18 @@ class ManipulatorController(Node):
         # Mirror original readiness: expose the server only after startup ends.
         self.execution.activate()
         self.get_logger().info('Manipulator is {} on /manipulate.'.format(self.status))
+
+    def validate_parameter_update(self, parameters):
+        # Geometry/endpoint changes require a restart, not a half-applied pose.
+        fixed = {'joint_names', 'home_joints', 'fixed_joint1', 'clearance_joints',
+                 'grasp_joints', 'place_joints', 'joint_lower_limits', 'joint_upper_limits',
+                 'joint_limit_margin', 'use_sim_attachment', 'arm_topic', 'gripper_action',
+                 'joint_states_topic', 'arm_base_frame'}
+        if any(p.name in fixed for p in parameters):
+            return SetParametersResult(successful=False, reason='geometry/endpoints require restart')
+        if self.status != self.IDLE:
+            return SetParametersResult(successful=False, reason='parameters change only while IDLE')
+        return SetParametersResult(successful=True)
 
     def validate_action_goal(self, message):
         try:
@@ -519,7 +525,7 @@ class ManipulatorController(Node):
         self.arm_goal = points[-1]
         self.arm_motion_ends_at = self.now_seconds() + elapsed
         self.step_deadline = (
-            self.arm_motion_ends_at + self.ARM_TIMEOUT_MARGIN
+            self.arm_motion_ends_at + self.get_parameter('arm_timeout_margin').value
         )
 
     def arm_reached(self):
@@ -548,7 +554,7 @@ class ManipulatorController(Node):
         goal.command.max_effort = self.get_parameter('gripper_max_effort').value
 
         self.gripper_result = None
-        self.step_deadline = self.now_seconds() + self.GRIPPER_TIMEOUT
+        self.step_deadline = self.now_seconds() + self.get_parameter('gripper_timeout').value
 
         self.gripper_handle = None
         self.gripper_cancel_future = None

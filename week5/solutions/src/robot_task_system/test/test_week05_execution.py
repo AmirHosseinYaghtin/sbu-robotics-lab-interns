@@ -187,8 +187,18 @@ def test_base_feedback_preserves_full_path(base):
     assert feedback.total_waypoints == 2
 
 
+@pytest.mark.parametrize('value', [-1.0, 0.0, float('nan'), float('inf')])
+def test_invalid_speed_rejected_without_modifying_parameter(base, value):
+    before = base.get_parameter('linear_speed').value
+    result = base.set_parameters([Parameter('linear_speed', value=value)])[0]
+    assert not result.successful
+    assert base.get_parameter('linear_speed').value == before
 
 
+def test_positive_speed_accepted_idle_but_not_during_move(base):
+    assert base.set_parameters([Parameter('linear_speed', value=0.12)])[0].successful
+    base.start_trajectory('MOVE', [(1.0, 0.0, 0.0)])
+    assert not base.set_parameters([Parameter('linear_speed', value=0.13)])[0].successful
 
 
 def test_arm_cancel_holds_and_preserves_attached_object(arm):
@@ -408,6 +418,7 @@ def test_synchronous_cancel_exception_preserves_watchdog_fallback(expired):
     task.cancel_started = time.monotonic() - (30.0 if expired else 0.0)
     task.goal_handle = NS(cancel_goal_async=lambda: (
         _ for _ in ()).throw(RuntimeError('cancel transport unavailable')))
+    task.get_parameter = lambda name: NS(value=20.0)
     task.try_dispatch_next_action()  # must not raise before the timeout check
     assert len(task.action_queue) == 2
     assert task.state.completed_actions == 0
@@ -421,3 +432,18 @@ def test_synchronous_cancel_exception_preserves_watchdog_fallback(expired):
         assert 'Cancel transport error' in task.state.message
 
 
+@pytest.mark.parametrize('speed', [0.01, 0.03, 0.15])
+@pytest.mark.parametrize('reverse', [False, True])
+def test_final_approach_never_exceeds_configured_linear_speed(base, speed, reverse):
+    assert base.set_parameters([Parameter('linear_speed', value=speed)])[0].successful
+    base.current_x = base.current_y = base.current_yaw = 0.0
+    base.last_odom_time = base.get_clock().now()
+    base.start_trajectory('MOVE', [(-0.1 if reverse else 0.1, 0.0, 0.0)], reverse)
+    captured = []
+    base.cmd_vel_publisher.publish = captured.append
+    base.control_loop()
+    command = captured[-1]
+    magnitude = abs(command.linear.x)
+    assert 0.0 < magnitude <= speed
+    assert magnitude == pytest.approx(min(speed, max(base.MIN_FINAL_SPEED, 0.08)))
+    assert (command.linear.x < 0.0) == reverse

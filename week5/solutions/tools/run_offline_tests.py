@@ -15,6 +15,6 @@ import pytest
 tests = root / 'src/robot_task_system/test'
 files = [str(p) for p in sorted(tests.glob('test_*.py')) if p.name not in {
     'test_copyright.py', 'test_flake8.py', 'test_pep257.py', 'test_week05_ros_integration.py'}]
-# Collect the teammate's pending acceptance cases and report their explicit skips.
+# Include the handoff acceptance cases, now enabled after parameter completion.
 files += [str(p) for p in sorted((tests / 'remaining').glob('test_*.py'))]
 raise SystemExit(pytest.main(['-q', *files, *sys.argv[1:]]))

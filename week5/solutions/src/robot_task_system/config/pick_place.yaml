@@ -9,7 +9,10 @@ task_controller:
   ros__parameters:
     target_frame: odom
     consistency_tolerance: 0.05
+    action_timeout: 900.0         # s per action (long moves on the large maps)
     one_object_at_a_time: true    # reorder multi-object plans into pick -> place pairs
+    server_timeout: 120.0
+    cancel_timeout: 20.0
     route_clearance: 0.30         # m kept from tables/obstacles on reordered paths
 
 manipulator_controller:
@@ -41,6 +44,14 @@ manipulator_controller:
     joint_upper_limits: [2.827, 1.571, 1.382, 2.042]
     joint_limit_margin: 0.02
 
-
-# TODO-W5-02: base execution limits and task/arm deadlines are fixed in code.
-# Restore validated parameters here; existing startup calibration stays above.
+robot_controller:
+  ros__parameters:
+    linear_speed: 0.15
+    waypoint_tolerance: 0.10
+    final_tolerance: 0.02
+    goal_theta_tolerance: 0.03
+    max_move_time: 600.0
+    odom_timeout: 5.0
+    initial_odom_timeout: 120.0
+    stuck_time: 20.0
+    stuck_distance: 0.05

@@ -1,0 +1,16 @@
+# Humble rosbag2 overrides; this is not a ROS parameter file.
+/task/status:
+  reliability: reliable
+  durability: transient_local
+  history: keep_last
+  depth: 1
+/tf_static:
+  reliability: reliable
+  durability: transient_local
+  history: keep_all
+/scan:
+  reliability: best_effort
+  durability: volatile
+/odom:
+  reliability: best_effort
+  durability: volatile

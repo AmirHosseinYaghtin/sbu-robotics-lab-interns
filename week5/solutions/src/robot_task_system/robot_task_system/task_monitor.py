@@ -2,7 +2,7 @@ import sys
 
 import rclpy
 from rclpy.node import Node
-from robot_task_interfaces.srv import GetRobotStatus
+from robot_task_interfaces.srv import GetRobotStatus, GetTaskStatus
 
 
 class TaskMonitor(Node):
@@ -19,11 +19,18 @@ class TaskMonitor(Node):
             '/get_manipulator_status'
         )
 
-        # TODO-W5-01: add whole-task monitoring alongside controller status.
+        self.task_client = self.create_client(GetTaskStatus, '/get_task_status')
 
         self.get_logger().info(
             'Task Monitor node has started.'
         )
+
+    def request_task_status(self, timeout_sec=3.0):
+        if not self.task_client.wait_for_service(timeout_sec=timeout_sec):
+            return None
+        future = self.task_client.call_async(GetTaskStatus.Request())
+        rclpy.spin_until_future_complete(self, future, timeout_sec=timeout_sec)
+        return future.result() if future.done() else None
 
     def wait_for_service(self, timeout_sec=5.0):
         self.get_logger().info(
@@ -82,6 +89,12 @@ def main(args=None):
     rclpy.init(args=args)
 
     node = TaskMonitor()
+    task = node.request_task_status()
+    if task is not None:
+        print('Task: {} | Plan: {} | Completed: {}/{} | Action: {} [{}] | {}'.format(
+            task.task_state, task.plan_file, task.completed_actions, task.total_actions,
+            task.current_action, task.action_state, task.message))
+
     if not node.wait_for_service():
         node.get_logger().error(
             'Service /get_robot_status is not available. '

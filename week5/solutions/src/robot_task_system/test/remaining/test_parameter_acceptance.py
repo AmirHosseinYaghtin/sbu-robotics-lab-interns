@@ -1,10 +1,10 @@
-"""TODO-W5-02: enable these acceptance tests after implementing parameters."""
+"""Acceptance tests for the completed runtime parameter feature."""
 import pytest
 import rclpy
 from rclpy.parameter import Parameter
 from robot_task_system.robot_controller import RobotController
 
-pytestmark = pytest.mark.skip(reason="TODO-W5-02: parameter feature deferred")
+
 
 
 @pytest.fixture
